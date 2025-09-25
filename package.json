@@ -1,8 +1,20 @@
 {
   "name": "ping-status",
-  "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "lint": "ultracite check",
+    "format": "ultracite fix",
+    "api": "bun --cwd apps/api dev",
+    "web": "bun --cwd apps/web dev",
+    "build": "bun run --cwd apps/web build",
+    "start": "bun run --cwd apps/api start",
+    "db:generate": "bun run --cwd packages/db db:generate",
+    "db:migrate": "bun run --cwd packages/db db:migrate",
+    "db:push": "bun run --cwd packages/db db:push",
+    "db:studio": "bun run --cwd packages/db db:studio",
+    "db:visualizer": "bun run --cwd packages/db db:visualizer"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
     "@types/bun": "latest",
@@ -10,5 +22,9 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

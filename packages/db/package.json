@@ -1,0 +1,19 @@
+{
+  "name": "@ping-status/db",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.22",
+    "drizzle-kit": "^0.31.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.5"
+  }
+}
