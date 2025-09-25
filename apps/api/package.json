@@ -1,0 +1,25 @@
+{
+  "name": "@ping-status/api",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./contracts": "./src/contract.ts"
+  },
+  "scripts": {
+    "dev": "bun --watch ./src/index.ts",
+    "start": "bun ./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@orpc/contract": "^1.9.0",
+    "@orpc/openapi": "^1.9.0",
+    "@orpc/server": "^1.9.0",
+    "hono": "^4.9.8",
+    "zod": "^4.1.11"
+  }
+}
