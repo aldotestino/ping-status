@@ -1,11 +1,42 @@
+import { OpenAPIHandler } from "@orpc/openapi/fetch";
+import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
+import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Hono } from "hono";
+import { logger } from "hono/logger";
+import router from "@/router";
 
-const api = new Hono().basePath("/api").get("/", (c) =>
-  c.json({
-    name: "ping-status",
-    version: "1.0.0",
-    date: new Date().toISOString(),
-  })
-);
+const handler = new OpenAPIHandler(router, {
+  plugins: [
+    new OpenAPIReferencePlugin({
+      schemaConverters: [new ZodToJsonSchemaConverter()],
+      docsPath: "/docs",
+      specGenerateOptions: {
+        info: {
+          title: "Ping Status API",
+          version: "1.0.0",
+        },
+        servers: [{ url: "/api" }],
+      },
+    }),
+  ],
+});
+
+const api = new Hono()
+  .basePath("/api")
+  .use(logger())
+  .use("/*", async (c, next) => {
+    const { matched, response } = await handler.handle(c.req.raw, {
+      prefix: "/api",
+      context: {
+        headers: c.req.raw.headers,
+      },
+    });
+
+    if (matched) {
+      return c.newResponse(response.body, response);
+    }
+
+    await next();
+  });
 
 export default api;
