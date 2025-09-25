@@ -1,0 +1,14 @@
+{
+  "name": "ping-status",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "2.2.2",
+    "@types/bun": "latest",
+    "ultracite": "5.3.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
