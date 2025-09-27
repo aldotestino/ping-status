@@ -2,9 +2,15 @@
   "name": "@ping-status/db",
   "type": "module",
   "private": true,
-  "scripts": {
+  "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@types/bun": "^1.2.22",
@@ -14,6 +20,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.5"
+    "drizzle-orm": "^0.44.5",
+    "@ping-status/env": "workspace:*"
   }
 }
