@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { monitorSchema } from "@ping-status/monitor";
 import { z } from "zod";
 
 const health = oc
@@ -15,6 +16,15 @@ const health = oc
     })
   );
 
+const monitors = oc
+  .route({
+    tags: ["monitor"],
+    method: "GET",
+    path: "/monitors",
+  })
+  .output(z.array(monitorSchema.omit({ validator: true })));
+
 export default {
   health,
+  monitors,
 };

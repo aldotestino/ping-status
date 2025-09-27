@@ -2,7 +2,7 @@
   "name": "@ping-status/monitor",
   "type": "module",
   "private": true,
-  "scripts": {
+  "exports": {
     ".": "./src/index.ts"
   },
   "devDependencies": {

@@ -5,7 +5,7 @@ const MAX_STATUS_CODE = 599;
 
 const SUCCESS_STATUS_CODE = 200;
 
-const monitorSchema = z.object({
+export const monitorSchema = z.object({
   name: z.string().min(1),
   url: z.url(),
   method: z.enum(["GET", "POST", "PUT"]).default("GET"),
