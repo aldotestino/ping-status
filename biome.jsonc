@@ -16,7 +16,8 @@
       "!**/components/magicui/**/*",
       "!**/routeTree.gen.ts",
       "!**/reportWebVitals.ts",
-      "!**/styles.css"
+      "!**/styles.css",
+      "!bun.lock"
     ]
   }
 }
