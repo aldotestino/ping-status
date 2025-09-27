@@ -7,6 +7,7 @@
     "format": "ultracite fix",
     "api": "bun --cwd apps/api dev",
     "web": "bun --cwd apps/web dev",
+    "pinger": "bun --cwd apps/pinger dev",
     "build": "bun run --cwd apps/web build",
     "start": "bun run --cwd apps/api start",
     "db:generate": "bun run --cwd packages/db db:generate",
