@@ -12,10 +12,14 @@ type MonitorStatusDay = MonitorStatusProps["days"][number];
 
 function getColors({ fail, success, total }: MonitorStatusDay) {
   return {
-    "bg-muted": total === 0,
-    "bg-green-600/80": total > 0 && success === total,
-    "bg-yellow-600/80": fail >= 1,
-    "bg-red-600/80": fail > 10,
+    "bg-muted-foreground/20 data-[state=delayed-open]:bg-muted-foreground/30":
+      total === 0,
+    "bg-monitor-status-operational/90 data-[state=delayed-open]:bg-monitor-status-operational":
+      total > 0 && success === total,
+    "bg-monitor-status-degraded/90 data-[state=delayed-open]:bg-monitor-status-degraded":
+      fail >= 1,
+    "bg-monitor-status-down/90 data-[state=delayed-open]:bg-monitor-status-down":
+      fail > 10,
   };
 }
 
@@ -29,41 +33,43 @@ function getDescription({ fail, success, total }: MonitorStatusDay) {
   }
 
   if (fail > 10) {
-    return "Partial Outage";
+    return "Downtime";
   }
 
-  return "Degraded Performance";
+  return "Degraded";
 }
 
 function MonitorStatusDay(v: MonitorStatusDay) {
   return (
-    <Tooltip key={v.day}>
+    <Tooltip delayDuration={200} key={v.day}>
       <TooltipTrigger asChild>
-        <div className={cn("h-full rounded-full", getColors(v))} />
+        <div
+          className={cn("h-full rounded-full transition-colors", getColors(v))}
+        />
       </TooltipTrigger>
       <TooltipContent
         arrow={false}
-        className="bg-background text-foreground shadow"
+        className="w-44 border bg-background p-1.5 text-foreground shadow"
         sideOffset={4}
       >
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <div className={cn("h-full w-1 rounded-full", getColors(v))} />
           <div className="space-y-0.5">
-            <div className="flex items-center justify-between gap-4">
-              <span className="font-medium text-sm">{getDescription(v)}</span>
-              <span className="text-muted-foreground">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-sm">{getDescription(v)}</span>
+              <span className="text-muted-foreground text-sm">
                 {format(v.day, "MMM d")}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span>
-                <span className="font-mono text-green-600/80 text-sm">
+                <span className="font-mono text-monitor-status-operational text-sm">
                   {v.total}
                 </span>{" "}
                 requests
               </span>
               <span>
-                <span className="font-mono text-red-600/80 text-sm">
+                <span className="font-mono text-monitor-status-down text-sm">
                   {v.fail}
                 </span>{" "}
                 failed
@@ -81,7 +87,7 @@ function MonitorStatus({ days, monitorName, successRate }: MonitorStatusProps) {
     <div className="space-y-2">
       <div className="flex justify-between">
         <span className="font-semibold">{monitorName}</span>
-        <span className="text-muted-foreground text-sm">
+        <span className="font-mono text-muted-foreground text-sm">
           {successRate.toFixed(2)}%
         </span>
       </div>
