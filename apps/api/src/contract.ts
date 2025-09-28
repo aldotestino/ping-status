@@ -62,9 +62,32 @@ const overview = oc
     })
   );
 
+const lastWeekLatencies = oc
+  .route({
+    tags: ["monitor"],
+    method: "GET",
+    path: "/last-week-latencies",
+  })
+  .output(
+    z.array(
+      z.object({
+        monitor: monitorSchema.pick({ name: true, url: true, method: true }),
+        latencies: z.array(
+          z.object({
+            date: z.iso.datetime(),
+            max: z.number(),
+            avg: z.number(),
+            min: z.number(),
+          })
+        ),
+      })
+    )
+  );
+
 export default {
   health,
   monitors,
   history,
   overview,
+  lastWeekLatencies,
 };

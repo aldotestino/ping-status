@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from "date-fns";
-import { CheckCircle, TriangleAlert } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { client } from "@/lib/orpc";
 
@@ -9,7 +9,7 @@ function MonitorsOverview({ down, total, lastUpdated }: MonitorsOverviewProps) {
   if (down >= 1) {
     return (
       <Alert className="border-monitor-status-down/50 bg-monitor-status-down/30">
-        <TriangleAlert />
+        <AlertCircle />
         <AlertTitle>
           Downtime ({down}/{total})
         </AlertTitle>

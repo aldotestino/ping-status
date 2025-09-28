@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChartSpline, HouseIcon } from "lucide-react";
+import { AlertCircle, ChartSpline, HouseIcon } from "lucide-react";
 import BurgerMenuIcon from "@/components/burger-menu-icon";
 import ThemeToggle from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 
 const navigationLinks = [
   { to: "/", label: "Status", icon: HouseIcon },
+  { to: "/incidents", label: "Incidents", icon: AlertCircle },
   { to: "/monitors", label: "Monitors", icon: ChartSpline },
 ];
 

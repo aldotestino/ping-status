@@ -30,7 +30,7 @@ function getDescription({ success, total }: MonitorStatusDay) {
     return "Operational";
   }
 
-  return "Degraded";
+  return "Downtime";
 }
 
 function MonitorStatusDay(v: MonitorStatusDay) {

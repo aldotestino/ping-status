@@ -3,7 +3,18 @@ import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
 import { monitors as monitorsArray } from "@ping-status/monitor";
 import { eachDayOfInterval, format, subDays } from "date-fns";
-import { and, count, desc, gte, inArray, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  avg,
+  count,
+  desc,
+  gte,
+  inArray,
+  isNull,
+  max,
+  min,
+  sql,
+} from "drizzle-orm";
 import contract from "@/contract";
 
 const router = implement(contract);
@@ -125,9 +136,60 @@ const overview = router.overview.handler(async () => {
   };
 });
 
+const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
+  const now = new Date();
+  const startOfPeriod = subDays(now, 7);
+
+  const monitorNames = monitorsArray.map((m) => m.name);
+
+  const latencies = await db
+    .select({
+      monitorName: pingResult.monitorName,
+      date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
+        (v) => new Date(v).toISOString()
+      ),
+      max: max(pingResult.responseTime).mapWith(Number),
+      avg: avg(pingResult.responseTime).mapWith(Number),
+      min: min(pingResult.responseTime).mapWith(Number),
+    })
+    .from(pingResult)
+    .where(
+      and(
+        inArray(pingResult.monitorName, monitorNames),
+        gte(pingResult.createdAt, startOfPeriod)
+      )
+    )
+    .groupBy(
+      pingResult.monitorName,
+      sql`DATE_TRUNC('hour', ${pingResult.createdAt})`
+    )
+    .orderBy(
+      pingResult.monitorName,
+      sql`DATE_TRUNC('hour', ${pingResult.createdAt})`
+    );
+
+  const latenciesByMonitor = Object.groupBy(latencies, (l) => l.monitorName);
+
+  return monitorsArray.map(({ name, url, method }) => ({
+    monitor: {
+      name,
+      url,
+      method,
+    },
+    latencies:
+      latenciesByMonitor[name]?.map((l) => ({
+        date: l.date,
+        max: l.max,
+        avg: l.avg,
+        min: l.min,
+      })) || [],
+  }));
+});
+
 export default {
   health,
   monitors,
   history,
   overview,
+  lastWeekLatencies,
 };
