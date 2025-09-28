@@ -1,9 +1,9 @@
 import { implement } from "@orpc/server";
 import { db } from "@ping-status/db";
-import { pingResult } from "@ping-status/db/schema";
+import { incident, pingResult } from "@ping-status/db/schema";
 import { monitors as monitorsArray } from "@ping-status/monitor";
 import { eachDayOfInterval, format, subDays } from "date-fns";
-import { and, count, gte, inArray, sql } from "drizzle-orm";
+import { and, count, gte, inArray, isNull, sql } from "drizzle-orm";
 import contract from "@/contract";
 
 const router = implement(contract);
@@ -98,8 +98,27 @@ const history = router.history.handler(async () => {
   return result;
 });
 
+const overview = router.overview.handler(async () => {
+  const [incidents] = await db
+    .select({
+      count: count(),
+    })
+    .from(incident)
+    .where(isNull(incident.closedAt));
+
+  const down = incidents?.count ?? 0;
+
+  return {
+    total: monitorsArray.length,
+    operational: monitorsArray.length - down,
+    down,
+    lastUpdated: new Date().toISOString(),
+  };
+});
+
 export default {
   health,
   monitors,
   history,
+  overview,
 };

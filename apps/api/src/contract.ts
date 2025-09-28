@@ -28,7 +28,7 @@ const history = oc
   .route({
     tags: ["monitor"],
     method: "GET",
-    path: "/history",
+    path: "/overview",
   })
   .output(
     z.array(
@@ -47,8 +47,24 @@ const history = oc
     )
   );
 
+const overview = oc
+  .route({
+    tags: ["monitor"],
+    method: "GET",
+    path: "/status",
+  })
+  .output(
+    z.object({
+      total: z.number(),
+      operational: z.number(),
+      down: z.number(),
+      lastUpdated: z.iso.datetime(),
+    })
+  );
+
 export default {
   health,
   monitors,
   history,
+  overview,
 };

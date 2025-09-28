@@ -7,8 +7,8 @@ import {
 import type { client } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
 
-type MonitorStatusProps = Awaited<ReturnType<typeof client.history>>[number];
-type MonitorStatusDay = MonitorStatusProps["days"][number];
+type MonitorHistoryProps = Awaited<ReturnType<typeof client.history>>[number];
+type MonitorStatusDay = MonitorHistoryProps["days"][number];
 
 function getColors({ fail, success, total }: MonitorStatusDay) {
   return {
@@ -16,24 +16,18 @@ function getColors({ fail, success, total }: MonitorStatusDay) {
       total === 0,
     "bg-monitor-status-operational/90 data-[state=delayed-open]:bg-monitor-status-operational":
       total > 0 && success === total,
-    "bg-monitor-status-degraded/90 data-[state=delayed-open]:bg-monitor-status-degraded":
-      fail >= 1,
     "bg-monitor-status-down/90 data-[state=delayed-open]:bg-monitor-status-down":
-      fail > 10,
+      fail >= 1,
   };
 }
 
-function getDescription({ fail, success, total }: MonitorStatusDay) {
+function getDescription({ success, total }: MonitorStatusDay) {
   if (total === 0) {
     return "Missing";
   }
 
   if (success === total) {
     return "Operational";
-  }
-
-  if (fail > 10) {
-    return "Downtime";
   }
 
   return "Degraded";
@@ -82,7 +76,11 @@ function MonitorStatusDay(v: MonitorStatusDay) {
   );
 }
 
-function MonitorStatus({ days, monitorName, successRate }: MonitorStatusProps) {
+function MonitorHistory({
+  days,
+  monitorName,
+  successRate,
+}: MonitorHistoryProps) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between">
@@ -104,4 +102,4 @@ function MonitorStatus({ days, monitorName, successRate }: MonitorStatusProps) {
   );
 }
 
-export default MonitorStatus;
+export default MonitorHistory;
