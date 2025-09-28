@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import MonitorHistory from "@/components/monitor-history";
 import MonitorsOverview from "@/components/monitors-overview";
+import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/lib/orpc";
 
 export const Route = createFileRoute("/")({
@@ -11,6 +12,23 @@ export const Route = createFileRoute("/")({
       queryClient.ensureQueryData(orpc.history.queryOptions()),
       queryClient.ensureQueryData(orpc.overview.queryOptions()),
     ]),
+  pendingComponent: () => (
+    <main className="space-y-6">
+      <Skeleton className="h-16" />
+      <div className="grid h-12 grid-cols-[repeat(45,1fr)] gap-1">
+        {Array.from({ length: 45 }).map((_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+          <Skeleton key={index} />
+        ))}
+      </div>
+      <div className="grid h-12 grid-cols-[repeat(45,1fr)] gap-1">
+        {Array.from({ length: 45 }).map((_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
+          <Skeleton key={index} />
+        ))}
+      </div>
+    </main>
+  ),
 });
 
 function App() {
