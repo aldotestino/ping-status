@@ -163,6 +163,7 @@ const processMonitor = (monitor: Monitor): Effect.Effect<InsertPingResult> =>
     return pr;
   });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: refactor later
 const program = Effect.gen(function* () {
   yield* Console.log(
     `starting ping monitoring for ${monitors.length} monitors`

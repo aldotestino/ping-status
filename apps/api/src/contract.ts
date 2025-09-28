@@ -24,7 +24,31 @@ const monitors = oc
   })
   .output(z.array(monitorSchema.omit({ validator: true })));
 
+const status = oc
+  .route({
+    tags: ["monitor"],
+    method: "GET",
+    path: "/status",
+  })
+  .output(
+    z.array(
+      z.object({
+        monitor: monitorSchema.omit({ validator: true }),
+        successRate: z.number(),
+        days: z.array(
+          z.object({
+            total: z.number(),
+            success: z.number(),
+            fail: z.number(),
+            day: z.iso.datetime(),
+          })
+        ),
+      })
+    )
+  );
+
 export default {
   health,
   monitors,
+  status,
 };
