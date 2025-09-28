@@ -3,7 +3,7 @@ import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
 import { monitors as monitorsArray } from "@ping-status/monitor";
 import { eachDayOfInterval, format, subDays } from "date-fns";
-import { and, count, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, desc, gte, inArray, isNull, sql } from "drizzle-orm";
 import contract from "@/contract";
 
 const router = implement(contract);
@@ -108,11 +108,20 @@ const overview = router.overview.handler(async () => {
 
   const down = incidents?.count ?? 0;
 
+  const [lastPing] = await db
+    .select()
+    .from(pingResult)
+    .orderBy(desc(pingResult.createdAt))
+    .limit(1);
+
+  const lastUpdated =
+    lastPing?.createdAt.toISOString() ?? new Date().toISOString();
+
   return {
     total: monitorsArray.length,
     operational: monitorsArray.length - down,
     down,
-    lastUpdated: new Date().toISOString(),
+    lastUpdated,
   };
 });
 

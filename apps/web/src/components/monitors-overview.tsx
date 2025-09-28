@@ -1,28 +1,31 @@
+import { formatDistanceToNow } from "date-fns";
 import { CheckCircle, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { client } from "@/lib/orpc";
 
 type MonitorsOverviewProps = Awaited<ReturnType<typeof client.overview>>;
 
-function MonitorsOverview({ down, operational, total }: MonitorsOverviewProps) {
+function MonitorsOverview({ down, total, lastUpdated }: MonitorsOverviewProps) {
   if (down >= 1) {
     return (
-      <Alert>
+      <Alert className="border-monitor-status-down/50 bg-monitor-status-down/30">
         <TriangleAlert />
-        <AlertTitle>Downtime</AlertTitle>
+        <AlertTitle>
+          Downtime ({down}/{total})
+        </AlertTitle>
         <AlertDescription>
-          {down}/{total} monitors are down
+          Last Updated: {formatDistanceToNow(lastUpdated, { addSuffix: true })}
         </AlertDescription>
       </Alert>
     );
   }
 
   return (
-    <Alert>
+    <Alert className="border-monitor-status-operational/50 bg-monitor-status-operational/30">
       <CheckCircle />
       <AlertTitle>All Systems Operational</AlertTitle>
       <AlertDescription>
-        {operational}/{total} monitors are operational
+        Last Updated: {formatDistanceToNow(lastUpdated, { addSuffix: true })}
       </AlertDescription>
     </Alert>
   );
