@@ -224,8 +224,8 @@ const program = Effect.gen(function* () {
 const main = program.pipe(
   Effect.tapError((error) => Console.error(error.message)),
   Effect.schedule(
-    // Schedule.spaced(Duration.minutes(env.MONITOR_INTERVAL_MINUTES))
-    Schedule.spaced(Duration.seconds(20))
+    Schedule.spaced(Duration.minutes(env.MONITOR_INTERVAL_MINUTES))
+    // Schedule.spaced(Duration.seconds(20))
   )
 );
 

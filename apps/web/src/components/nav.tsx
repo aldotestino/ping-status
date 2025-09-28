@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { ChartSpline, HouseIcon } from "lucide-react";
 import BurgerMenuIcon from "@/components/burger-menu-icon";
+import ThemeToggle from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -65,7 +66,9 @@ export function Nav() {
           </NavigationMenuList>
         </NavigationMenu>
         {/* Right side */}
-        <div className="flex flex-1 items-center justify-end gap-2" />
+        <div className="flex flex-1 items-center justify-end gap-2">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );
