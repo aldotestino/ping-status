@@ -4,7 +4,6 @@ const MIN_STATUS_CODE = 100;
 const MAX_STATUS_CODE = 599;
 
 export const monitorSchema = z.object({
-  id: z.int(),
   name: z.string().min(1),
   url: z.url(),
   method: z.enum(["GET", "POST", "PUT"]).default("GET"),
@@ -35,7 +34,6 @@ const monitor = (config: MonitorConfig): Monitor => {
 
 export const monitors = [
   monitor({
-    id: 1,
     name: "example-monitor",
     url: "http://localhost:4000/200",
     validator: ({ status }) => ({
@@ -43,7 +41,6 @@ export const monitors = [
     }),
   }),
   monitor({
-    id: 2,
     name: "example-monitor-2",
     url: "http://localhost:4000/204",
     validator: ({ status }) => ({

@@ -24,16 +24,16 @@ const monitors = oc
   })
   .output(z.array(monitorSchema.omit({ validator: true })));
 
-const status = oc
+const history = oc
   .route({
     tags: ["monitor"],
     method: "GET",
-    path: "/status",
+    path: "/history",
   })
   .output(
     z.array(
       z.object({
-        monitor: monitorSchema.omit({ validator: true }),
+        monitorName: monitorSchema.shape.name,
         successRate: z.number(),
         days: z.array(
           z.object({
@@ -50,5 +50,5 @@ const status = oc
 export default {
   health,
   monitors,
-  status,
+  history,
 };

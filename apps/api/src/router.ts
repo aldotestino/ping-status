@@ -18,12 +18,12 @@ const monitors = router.monitors.handler(() =>
   monitorsArray.map(({ validator: _, ...m }) => m)
 );
 
-const status = router.status.handler(async () => {
+const history = router.history.handler(async () => {
   const now = new Date();
   const startOfPeriod = subDays(now, 44);
   const days = eachDayOfInterval({ start: startOfPeriod, end: now });
 
-  const ms = monitorsArray.map(({ validator: _, ...m }) => m);
+  const monitorNames = monitorsArray.map((m) => m.name);
 
   // Get daily aggregated ping data from database
   const dailyStats = await db
@@ -42,10 +42,7 @@ const status = router.status.handler(async () => {
     .from(pingResult)
     .where(
       and(
-        inArray(
-          pingResult.monitorName,
-          ms.map((m) => m.name)
-        ),
+        inArray(pingResult.monitorName, monitorNames),
         gte(pingResult.createdAt, startOfPeriod)
       )
     )
@@ -56,8 +53,8 @@ const status = router.status.handler(async () => {
   const statsByMonitor = Object.groupBy(dailyStats, (stat) => stat.monitorName);
 
   // Build the response structure
-  const result = ms.map((monitor) => {
-    const monitorStats = statsByMonitor[monitor.name] || [];
+  const result = monitorNames.map((monitor) => {
+    const monitorStats = statsByMonitor[monitor] || [];
 
     // Create a map of existing days for quick lookup
     const statsByDay = new Map(monitorStats.map((stat) => [stat.day, stat]));
@@ -92,7 +89,7 @@ const status = router.status.handler(async () => {
       totalRequests > 0 ? (totalSuccess / totalRequests) * 100 : 100;
 
     return {
-      monitor,
+      monitorName: monitor,
       successRate,
       days: dayData,
     };
@@ -104,5 +101,5 @@ const status = router.status.handler(async () => {
 export default {
   health,
   monitors,
-  status,
+  history,
 };
