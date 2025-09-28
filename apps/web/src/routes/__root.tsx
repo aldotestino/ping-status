@@ -13,7 +13,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
       <Nav />
-      <div className="mx-auto max-w-screen-lg px-4 md:px-6">
+      <div className="mx-auto max-w-screen-lg px-4 py-10 md:px-6">
         <Outlet />
       </div>
       <TanstackDevtools

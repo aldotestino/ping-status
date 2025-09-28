@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 
 const navigationLinks = [
-  { to: "/", label: "Dashboard", icon: HouseIcon },
+  { to: "/", label: "Status", icon: HouseIcon },
   { to: "/monitors", label: "Monitors", icon: ChartSpline },
 ];
 
