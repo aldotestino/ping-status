@@ -2,7 +2,7 @@ import { TanstackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import Header from "../components/Header";
+import Nav from "../components/nav";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 
 type MyRouterContext = {
@@ -12,8 +12,10 @@ type MyRouterContext = {
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
-      <Header />
-      <Outlet />
+      <Nav />
+      <div className="mx-auto max-w-screen-lg px-4 md:px-6">
+        <Outlet />
+      </div>
       <TanstackDevtools
         config={{
           position: "bottom-left",
