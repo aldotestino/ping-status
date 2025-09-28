@@ -1,10 +1,67 @@
 import { db } from "@ping-status/db";
-import { type InsertPingResult, pingResult } from "@ping-status/db/schema";
+import {
+  type InsertPingResult,
+  incident,
+  pingResult,
+} from "@ping-status/db/schema";
 import { env } from "@ping-status/env";
 import { type Monitor, monitors } from "@ping-status/monitor";
+import { and, inArray, isNull } from "drizzle-orm";
 import { Console, Duration, Effect, Schedule } from "effect";
 import { DatabaseError, FetchError, ReadBodyError } from "@/errors";
 import { toFetchParams } from "@/utils";
+
+const closeIncidents = (incidentIds: number[]) =>
+  Effect.tryPromise({
+    try: () =>
+      db
+        .update(incident)
+        .set({ closedAt: new Date() })
+        .where(
+          and(inArray(incident.id, incidentIds), isNull(incident.closedAt)) // be sure the incident is still open
+        ),
+    catch: (error: unknown) =>
+      new DatabaseError({
+        message: error instanceof Error ? error.message : "Unknown error",
+        cause: error,
+      }),
+  });
+
+const openIncidents = (monitorNames: string[]) =>
+  Effect.tryPromise({
+    try: () =>
+      db
+        .insert(incident)
+        .values(monitorNames.map((name) => ({ monitorName: name })))
+        .returning({
+          id: incident.id,
+          monitorName: incident.monitorName,
+        }),
+    catch: (error: unknown) =>
+      new DatabaseError({
+        message: error instanceof Error ? error.message : "Unknown error",
+        cause: error,
+      }),
+  });
+
+const getOpenIncidents = (monitorNames: string[]) =>
+  Effect.tryPromise({
+    try: () =>
+      db
+        .select()
+        .from(incident)
+        .where(
+          and(
+            inArray(incident.monitorName, monitorNames),
+            isNull(incident.closedAt)
+          )
+        ),
+    catch: (error: unknown) =>
+      new DatabaseError({
+        message: error instanceof Error ? error.message : "Unknown error",
+        cause: error,
+      }),
+  });
 
 const savePingResult = (values: InsertPingResult[]) =>
   Effect.tryPromise({
@@ -82,20 +139,22 @@ const processMonitor = (monitor: Monitor): Effect.Effect<InsertPingResult> =>
       }),
       Effect.match({
         onFailure: (error) => ({
-          monitorId: monitor.id,
+          monitorName: monitor.name,
           responseTime: 0,
           status: 0,
           success: false,
           message: error.message,
+          incidentId: null,
         }),
         onSuccess: (result) => {
           const validatorResult = monitor.validator(result);
           return {
-            monitorId: monitor.id,
+            monitorName: monitor.name,
             responseTime: result.responseTime,
             status: result.status,
             success: validatorResult.success,
             message: validatorResult.message ?? null,
+            incidentId: null,
           };
         },
       })
@@ -109,22 +168,64 @@ const program = Effect.gen(function* () {
     `starting ping monitoring for ${monitors.length} monitors`
   );
 
-  const results = yield* Effect.all(monitors.map(processMonitor), {
+  const pings = yield* Effect.all(monitors.map(processMonitor), {
     concurrency: env.MONITOR_CONCURRENCY,
   });
 
-  yield* savePingResult(results).pipe(
-    Effect.tapBoth({
-      onFailure: (error) => Console.error(error.message),
-      onSuccess: () =>
-        Console.log(`ping results saved for ${results.length} monitors`),
-    })
+  const incidentsToOpen: string[] = []; // monitor names
+  const incidentsToClose: number[] = []; // incident ids
+
+  const currentOpenIncidents = yield* getOpenIncidents(
+    monitors.map((m) => m.name)
   );
+
+  for (const ping of pings) {
+    const relatedIncident = currentOpenIncidents.find(
+      (i) => i.monitorName === ping.monitorName
+    );
+
+    if (relatedIncident && !ping.success) {
+      ping.incidentId = relatedIncident.id;
+    }
+
+    if (!(relatedIncident || ping.success)) {
+      incidentsToOpen.push(ping.monitorName);
+    }
+
+    if (relatedIncident && ping.success) {
+      incidentsToClose.push(relatedIncident.id);
+    }
+  }
+
+  if (incidentsToOpen.length > 0) {
+    const opened = yield* openIncidents(incidentsToOpen);
+    yield* Console.log(`opened ${opened.length} incidents`);
+
+    // link the incidents to the pings
+    for (const o of opened) {
+      const ping = pings.find((p) => p.monitorName === o.monitorName);
+      if (ping) {
+        ping.incidentId = o.id;
+      }
+    }
+
+    // send notification
+  }
+
+  if (incidentsToClose.length > 0) {
+    const closed = yield* closeIncidents(incidentsToClose);
+    yield* Console.log(`closed ${closed.rowCount} incidents`);
+    // send notification
+  }
+
+  yield* savePingResult(pings);
 });
 
 const main = program.pipe(
+  Effect.tapError((error) => Console.error(error.message)),
   Effect.schedule(
-    Schedule.spaced(Duration.minutes(env.MONITOR_INTERVAL_MINUTES))
+    // Schedule.spaced(Duration.minutes(env.MONITOR_INTERVAL_MINUTES))
+    Schedule.spaced(Duration.seconds(20))
   )
 );
 

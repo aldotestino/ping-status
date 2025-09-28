@@ -50,13 +50,4 @@ export const monitors = [
       success: status === 204,
     }),
   }),
-  // test of failed ping
-  monitor({
-    id: 3,
-    name: "example-monitor-3",
-    url: "http://localhost:4000/500",
-    validator: ({ status }) => ({
-      success: status === 200,
-    }),
-  }),
 ];
