@@ -1,5 +1,5 @@
 {
-  "name": "pinger",
+  "name": "@ping-status/pinger",
   "module": "index.ts",
   "type": "module",
   "private": true,
