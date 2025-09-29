@@ -1,4 +1,25 @@
 services:
+
+  pinger:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.pinger
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ping-status
+
+  app:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.app
+    ports:
+      - 8080:3000
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ping-status
+
   db:
     image: postgres:16
     ports:

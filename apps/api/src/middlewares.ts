@@ -13,6 +13,6 @@ export const serveWebApp = createMiddleware((c, next) => {
     return serveStatic({ root: "./public" })(c, next);
   }
 
-  return next();
+  return serveStatic({ path: "/index.html", root: "./public" })(c, next);
 });
 

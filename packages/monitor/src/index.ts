@@ -35,14 +35,14 @@ const monitor = (config: MonitorConfig): Monitor => {
 export const monitors = [
   monitor({
     name: "example-monitor",
-    url: "http://localhost:4000/200",
+    url: "http://host.docker.internal:4000/200",
     validator: ({ status }) => ({
       success: status === 200,
     }),
   }),
   monitor({
     name: "example-monitor-2",
-    url: "http://localhost:4000/204",
+    url: "http://host.docker.internal:4000/204",
     validator: ({ status }) => ({
       success: status === 204,
     }),
