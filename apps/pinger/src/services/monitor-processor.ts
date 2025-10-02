@@ -1,7 +1,7 @@
-import { MonitorPinger } from "@/services/MonitorPinger";
 import type { InsertPingResult } from "@ping-status/db/schema";
 import type { Monitor } from "@ping-status/monitor";
 import { Console, Effect } from "effect";
+import { MonitorPinger } from "@/services/monitor-pinger";
 
 export class MonitorProcessor extends Effect.Service<MonitorProcessor>()(
   "MonitorProcessor",

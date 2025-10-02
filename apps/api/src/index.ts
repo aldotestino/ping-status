@@ -1,10 +1,10 @@
-import { serveWebApp } from "@/middlewares";
-import router from "@/router";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
+import { serveWebApp } from "@/middlewares";
+import router from "@/router";
 
 const handler = new OpenAPIHandler(router, {
   plugins: [
