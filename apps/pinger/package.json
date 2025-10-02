@@ -11,14 +11,15 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@effect/platform": "^0.92.1",
+    "@effect/platform-bun": "^0.81.0",
     "@ping-status/db": "workspace:*",
     "@ping-status/env": "workspace:*",
     "@ping-status/monitor": "workspace:*",
     "drizzle-orm": "^0.44.5",
-    "effect": "^3.17.14"
+    "effect": "^3.18.1"
   }
 }

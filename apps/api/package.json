@@ -13,13 +13,13 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@orpc/contract": "^1.9.0",
-    "@orpc/openapi": "^1.9.0",
-    "@orpc/server": "^1.9.0",
-    "@orpc/zod": "^1.9.0",
+    "@orpc/contract": "^1.9.2",
+    "@orpc/openapi": "^1.9.2",
+    "@orpc/server": "^1.9.2",
+    "@orpc/zod": "^1.9.2",
     "@ping-status/monitor": "workspace:*",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.5",
