@@ -1,21 +1,10 @@
+import contract from "@/contract";
 import { implement } from "@orpc/server";
 import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
 import { monitors as monitorsArray } from "@ping-status/monitor";
 import { eachDayOfInterval, format, subDays } from "date-fns";
-import {
-  and,
-  avg,
-  count,
-  desc,
-  gte,
-  inArray,
-  isNull,
-  max,
-  min,
-  sql,
-} from "drizzle-orm";
-import contract from "@/contract";
+import { and, count, desc, gte, inArray, isNull, sql } from "drizzle-orm";
 
 const router = implement(contract);
 
@@ -148,9 +137,9 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
       date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
         (v) => new Date(v).toISOString()
       ),
-      max: max(pingResult.responseTime).mapWith(Number),
-      avg: avg(pingResult.responseTime).mapWith(Number),
-      min: min(pingResult.responseTime).mapWith(Number),
+      p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+        (v) => Math.round(v)
+      ),
     })
     .from(pingResult)
     .where(
@@ -179,9 +168,7 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
     latencies:
       latenciesByMonitor[name]?.map((l) => ({
         date: l.date,
-        max: l.max,
-        avg: l.avg,
-        min: l.min,
+        p95: l.p95,
       })) || [],
   }));
 });

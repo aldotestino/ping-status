@@ -1,8 +1,3 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { format } from "date-fns";
-import { ChevronRight } from "lucide-react";
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import {
   type ChartConfig,
@@ -11,6 +6,11 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { orpc } from "@/lib/orpc";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { format } from "date-fns";
+import { ChevronRight } from "lucide-react";
+import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 
 export const Route = createFileRoute("/monitors")({
   component: RouteComponent,
@@ -19,17 +19,9 @@ export const Route = createFileRoute("/monitors")({
 });
 
 const chartConfig = {
-  max: {
-    label: "Max",
-    color: "var(--chart-1)",
-  },
-  avg: {
-    label: "Avg",
-    color: "var(--chart-2)",
-  },
-  min: {
-    label: "Min",
-    color: "var(--chart-3)",
+  p95: {
+    label: "p95",
+    color: "var(--monitor-status-operational)",
   },
 } satisfies ChartConfig;
 
@@ -41,10 +33,9 @@ function RouteComponent() {
   return (
     <main className="space-y-6">
       <p className="text-muted-foreground">
-        <span className="font-semibold text-chart-1">Max</span>,{" "}
-        <span className="font-semibold text-chart-2">Avg</span>, and{" "}
-        <span className="font-semibold text-chart-3">Min</span> latencies over
-        the <span className="font-semibold text-foreground">last 7 days</span>.
+        <span className="font-semibold text-foreground">p95</span> latencies
+        over the{" "}
+        <span className="font-semibold text-foreground">last 7 days</span>.
       </p>
       {lastWeekLatencies.map(({ monitor, latencies }) => (
         <div className="space-y-2" key={monitor.name}>
@@ -87,21 +78,10 @@ function RouteComponent() {
                 cursor={false}
               />
               <Line
-                dataKey="max"
+                dataKey="p95"
                 dot={false}
-                stroke="var(--chart-1)"
-                type="natural"
-              />
-              <Line
-                dataKey="avg"
-                dot={false}
-                stroke="var(--chart-2)"
-                type="natural"
-              />
-              <Line
-                dataKey="min"
-                dot={false}
-                stroke="var(--chart-3)"
+                stroke="var(--monitor-status-operational)"
+                strokeWidth={2}
                 type="natural"
               />
             </LineChart>

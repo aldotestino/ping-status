@@ -73,12 +73,7 @@ const lastWeekLatencies = oc
       z.object({
         monitor: monitorSchema.pick({ name: true, url: true, method: true }),
         latencies: z.array(
-          z.object({
-            date: z.iso.datetime(),
-            max: z.number(),
-            avg: z.number(),
-            min: z.number(),
-          })
+          z.object({ date: z.iso.datetime(), p95: z.number() })
         ),
       })
     )
