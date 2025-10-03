@@ -1,4 +1,5 @@
 import { oc } from "@orpc/contract";
+import { incidentSchema } from "@ping-status/db/schema";
 import { monitorSchema } from "@ping-status/monitor";
 import { z } from "zod";
 
@@ -80,10 +81,28 @@ const lastWeekLatencies = oc
     )
   );
 
+const incidents = oc
+  .route({
+    tags: ["monitor"],
+    method: "GET",
+    path: "/incidents",
+  })
+  .input(
+    z.object({
+      status: z.enum(["open", "closed", "all"]).default("open"),
+      monitorName: z.string().optional(),
+      page: z.coerce.number().default(1),
+      limit: z.coerce.number().default(10),
+      order: z.enum(["asc", "desc"]).default("desc"),
+    })
+  )
+  .output(z.array(incidentSchema));
+
 export default {
   health,
   monitors,
   history,
   overview,
   lastWeekLatencies,
+  incidents,
 };

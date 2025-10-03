@@ -3,7 +3,18 @@ import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
 import { monitors as monitorsArray } from "@ping-status/monitor";
 import { eachDayOfInterval, format, subDays } from "date-fns";
-import { and, count, desc, gte, inArray, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  sql,
+} from "drizzle-orm";
 import contract from "@/contract";
 
 const router = implement(contract);
@@ -128,14 +139,14 @@ const history = router.history.handler(async () => {
 });
 
 const overview = router.overview.handler(async () => {
-  const [incidents] = await db
+  const [openIncidents] = await db
     .select({
       count: count(),
     })
     .from(incident)
     .where(isNull(incident.closedAt));
 
-  const down = incidents?.count ?? 0;
+  const down = openIncidents?.count ?? 0;
 
   const [lastPing] = await db
     .select()
@@ -202,10 +213,35 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
   }));
 });
 
+const incidents = router.incidents.handler(({ input }) => {
+  return db
+    .select()
+    .from(incident)
+    .where(
+      and(
+        input.status === "all"
+          ? undefined
+          : // biome-ignore lint/style/noNestedTernary: ok
+            input.status === "open"
+            ? isNull(incident.closedAt)
+            : isNotNull(incident.closedAt),
+        input.monitorName
+          ? eq(incident.monitorName, input.monitorName)
+          : undefined
+      )
+    )
+    .limit(input.limit)
+    .offset((input.page - 1) * input.limit)
+    .orderBy(
+      input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt)
+    );
+});
+
 export default {
   health,
   monitors,
   history,
   overview,
   lastWeekLatencies,
+  incidents,
 };
