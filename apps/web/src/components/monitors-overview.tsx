@@ -8,7 +8,7 @@ type MonitorsOverviewProps = Awaited<ReturnType<typeof client.overview>>;
 function MonitorsOverview({ down, total, lastUpdated }: MonitorsOverviewProps) {
   if (down >= 1) {
     return (
-      <Alert className="border-monitor-status-down/50 bg-monitor-status-down/30">
+      <Alert className="border-monitor-status-down/40 bg-monitor-status-down/20 text-monitor-status-down">
         <AlertCircle />
         <AlertTitle>
           Downtime ({down}/{total})
@@ -21,7 +21,7 @@ function MonitorsOverview({ down, total, lastUpdated }: MonitorsOverviewProps) {
   }
 
   return (
-    <Alert className="border-monitor-status-operational/50 bg-monitor-status-operational/30">
+    <Alert className="border-monitor-status-operational/40 bg-monitor-status-operational/20 text-monitor-status-operational">
       <CheckCircle />
       <AlertTitle>All Systems Operational</AlertTitle>
       <AlertDescription>

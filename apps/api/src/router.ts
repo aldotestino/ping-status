@@ -214,17 +214,18 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
 });
 
 const incidents = router.incidents.handler(({ input }) => {
+  const statusFilter = {
+    all: undefined,
+    open: isNull(incident.closedAt),
+    closed: isNotNull(incident.closedAt),
+  };
+
   return db
     .select()
     .from(incident)
     .where(
       and(
-        input.status === "all"
-          ? undefined
-          : // biome-ignore lint/style/noNestedTernary: ok
-            input.status === "open"
-            ? isNull(incident.closedAt)
-            : isNotNull(incident.closedAt),
+        statusFilter[input.status],
         input.monitorName
           ? eq(incident.monitorName, input.monitorName)
           : undefined
