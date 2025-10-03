@@ -89,7 +89,7 @@ function RouteComponent() {
             ) : (
               <CircleSlash className="size-10" />
             )}
-            <p>No incidents found</p>
+            <p>No {status !== "all" && status} incidents found</p>
           </CardContent>
         </Card>
       ) : (

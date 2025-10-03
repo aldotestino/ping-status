@@ -27,51 +27,53 @@ export function Nav() {
   });
 
   return (
-    <header className="mx-auto max-w-screen-lg px-4 md:px-6">
-      <div className="flex h-16 items-center justify-between gap-4">
-        {/* Left side */}
-        <div className="flex flex-1 items-center gap-2">
-          {/* Mobile menu trigger */}
-          <MobileMenu location={location} />
-          {/* Logo */}
-          <div className="flex items-center">
-            <h1 className="whitespace-nowrap font-semibold text-xl">
-              Ping Status
-            </h1>
+    <div className="sticky top-0 right-0 left-0 z-50 bg-background/20 backdrop-blur-sm">
+      <header className="mx-auto max-w-screen-lg px-4 md:px-6">
+        <div className="flex h-16 items-center justify-between gap-4">
+          {/* Left side */}
+          <div className="flex flex-1 items-center gap-2">
+            {/* Mobile menu trigger */}
+            <MobileMenu location={location} />
+            {/* Logo */}
+            <div className="flex items-center">
+              <h1 className="whitespace-nowrap font-semibold text-xl">
+                Ping Status
+              </h1>
+            </div>
+          </div>
+          {/* Middle area */}
+          <NavigationMenu className="max-md:hidden">
+            <NavigationMenuList className="gap-2">
+              {navigationLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavigationMenuItem key={link.label}>
+                    <NavigationMenuLink
+                      active={location === link.to}
+                      asChild
+                      className="flex-row items-center gap-2 py-1.5 font-medium text-foreground hover:text-primary"
+                    >
+                      <Link to={link.to}>
+                        <Icon
+                          aria-hidden="true"
+                          className="text-muted-foreground/80"
+                          size={16}
+                        />
+                        <span>{link.label}</span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                );
+              })}
+            </NavigationMenuList>
+          </NavigationMenu>
+          {/* Right side */}
+          <div className="flex flex-1 items-center justify-end gap-2">
+            <ThemeToggle />
           </div>
         </div>
-        {/* Middle area */}
-        <NavigationMenu className="max-md:hidden">
-          <NavigationMenuList className="gap-2">
-            {navigationLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavigationMenuItem key={link.label}>
-                  <NavigationMenuLink
-                    active={location === link.to}
-                    asChild
-                    className="flex-row items-center gap-2 py-1.5 font-medium text-foreground hover:text-primary"
-                  >
-                    <Link to={link.to}>
-                      <Icon
-                        aria-hidden="true"
-                        className="text-muted-foreground/80"
-                        size={16}
-                      />
-                      <span>{link.label}</span>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              );
-            })}
-          </NavigationMenuList>
-        </NavigationMenu>
-        {/* Right side */}
-        <div className="flex flex-1 items-center justify-end gap-2">
-          <ThemeToggle />
-        </div>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 }
 
