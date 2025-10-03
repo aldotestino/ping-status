@@ -2,6 +2,7 @@ import { implement } from "@orpc/server";
 import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
 import { monitors as monitorsArray } from "@ping-status/monitor";
+import { makeBadge } from "badge-maker";
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import {
   and,
@@ -221,12 +222,19 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
   }));
 });
 
-const incidents = router.incidents.handler(({ input }) => {
+const incidents = router.incidents.handler(({ input, errors }) => {
   const statusFilter = {
     all: undefined,
     open: isNull(incident.closedAt),
     closed: isNotNull(incident.closedAt),
   };
+
+  if (
+    input.monitorName &&
+    !monitorsArray.some((m) => m.name === input.monitorName)
+  ) {
+    throw errors.NOT_FOUND();
+  }
 
   return db
     .select()
@@ -250,6 +258,55 @@ const incidents = router.incidents.handler(({ input }) => {
     );
 });
 
+const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
+  if (
+    input.monitorName &&
+    !monitorsArray.some((m) => m.name === input.monitorName)
+  ) {
+    throw errors.NOT_FOUND();
+  }
+
+  const monitorNames = input.monitorName
+    ? [input.monitorName]
+    : monitorsArray.map((m) => m.name);
+
+  const [openIncidents] = await db
+    .select({
+      count: count(),
+    })
+    .from(incident)
+    .where(
+      and(
+        inArray(incident.monitorName, monitorNames),
+        isNull(incident.closedAt)
+      )
+    );
+
+  const down = openIncidents?.count ?? 0;
+
+  const svg = makeBadge({
+    style: "flat",
+    message:
+      down > 0
+        ? // biome-ignore lint/style/noNestedTernary: ok
+          input.monitorName
+          ? "Downtime"
+          : `Downtime (${down}/${monitorsArray.length})`
+        : "Operational",
+    color: down ? "#EC6041" : "#51B363",
+    label: input.monitorName ?? "All Systems",
+    logoBase64:
+      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDciIGhlaWdodD0iMzYiIHZpZXdCb3g9IjAgMCA0NyAzNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAuNzUgMzUuOTk5OEwxNC41NzczIDM1Ljk5OThDMTcuMzMwNSAzNS45OTk4IDE5LjkxODQgMzQuNzMxOCAyMS41NDMzIDMyLjU4NjdMMzAuNDQ0MiAyMC44MzY2SDIxLjQzMTdDMjEuNDUxNSAxNy40NjA4IDI0LjMwNjUgMTQuNzMgMjcuODI1NyAxNC43M0wzMC41Mzc0IDE0LjczQzMzLjI0NDQgMTQuNzMgMzUuNzk0NSAxMy41MDM5IDM3LjQyNTIgMTEuNDE4NEw0Ni4zNTk3IC0wLjAwNzgxMjVIMzIuNDc4QzI5LjcyOTEgLTAuMDA3ODEyNSAyNy4xNDQ2IDEuMjU2MzQgMjUuNTE5IDMuMzk2MDRMMC43NSAzNS45OTk4WiIgZmlsbD0iI2ZmZmZmZiIvPgo8cGF0aCBkPSJNMzAuNTYzNyAyMC44MzY2VjM1Ljk5OThINDYuMzU5N1YyOS4xNjU1QzQ2LjM1OTcgMjQuNTY1NiA0Mi40OTYyIDIwLjgzNjYgMzcuNzMwNCAyMC44MzY2SDMwLjU2MzdaIiBmaWxsPSIjZmZmZmZmIi8+Cjwvc3ZnPgo=",
+  });
+
+  return {
+    headers: {
+      "Content-Type": "image/svg+xml",
+    },
+    body: new File([svg], "badge.svg", { type: "image/svg+xml" }),
+  };
+});
+
 export default {
   health,
   monitors,
@@ -257,4 +314,5 @@ export default {
   overview,
   lastWeekLatencies,
   incidents,
+  statusBadge,
 };

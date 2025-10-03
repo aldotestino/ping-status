@@ -87,16 +87,47 @@ const incidents = oc
     method: "GET",
     path: "/incidents",
   })
+  .errors({
+    NOT_FOUND: {
+      message: "Monitor not found",
+    },
+  })
   .input(
     z.object({
       status: z.enum(["open", "closed", "all"]).default("open"),
-      monitorName: z.string().optional(),
+      monitorName: z.string().trim().min(1).optional(),
       page: z.coerce.number().default(1),
       limit: z.coerce.number().default(10),
       order: z.enum(["asc", "desc"]).default("desc"),
     })
   )
   .output(z.array(incidentSchema));
+
+const statusBadge = oc
+  .route({
+    tags: ["monitor"],
+    method: "GET",
+    path: "/status-badge",
+    outputStructure: "detailed",
+  })
+  .errors({
+    NOT_FOUND: {
+      message: "Monitor not found",
+    },
+  })
+  .input(
+    z.object({
+      monitorName: z.string().trim().min(1).optional(),
+    })
+  )
+  .output(
+    z.object({
+      headers: z.object({
+        "Content-Type": z.literal("image/svg+xml"),
+      }),
+      body: z.file(),
+    })
+  );
 
 export default {
   health,
@@ -105,4 +136,5 @@ export default {
   overview,
   lastWeekLatencies,
   incidents,
+  statusBadge,
 };

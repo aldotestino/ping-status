@@ -21,6 +21,7 @@
     "@orpc/server": "^1.9.2",
     "@orpc/zod": "^1.9.2",
     "@ping-status/monitor": "workspace:*",
+    "badge-maker": "^5.0.2",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.5",
     "hono": "^4.9.8",
