@@ -144,7 +144,15 @@ const overview = router.overview.handler(async () => {
       count: count(),
     })
     .from(incident)
-    .where(isNull(incident.closedAt));
+    .where(
+      and(
+        inArray(
+          incident.monitorName,
+          monitorsArray.map((m) => m.name)
+        ),
+        isNull(incident.closedAt)
+      )
+    );
 
   const down = openIncidents?.count ?? 0;
 
@@ -225,6 +233,10 @@ const incidents = router.incidents.handler(({ input }) => {
     .from(incident)
     .where(
       and(
+        inArray(
+          incident.monitorName,
+          monitorsArray.map((m) => m.name)
+        ),
         statusFilter[input.status],
         input.monitorName
           ? eq(incident.monitorName, input.monitorName)
