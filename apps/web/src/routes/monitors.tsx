@@ -1,3 +1,8 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { format } from "date-fns";
+import { ChevronRight } from "lucide-react";
+import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import {
   type ChartConfig,
@@ -6,11 +11,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { orpc } from "@/lib/orpc";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { format } from "date-fns";
-import { ChevronRight } from "lucide-react";
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 
 export const Route = createFileRoute("/monitors")({
   component: RouteComponent,
@@ -49,7 +49,7 @@ function RouteComponent() {
                 {monitor.url}
               </p>
             </div>
-            <Button asChild variant="ghost">
+            <Button asChild variant="outline">
               <Link to={"/"}>
                 Details
                 <ChevronRight />
@@ -82,7 +82,7 @@ function RouteComponent() {
                 dot={false}
                 stroke="var(--monitor-status-operational)"
                 strokeWidth={2}
-                type="natural"
+                type="monotone"
               />
             </LineChart>
           </ChartContainer>

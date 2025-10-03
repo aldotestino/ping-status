@@ -28,7 +28,7 @@ const history = oc
   .route({
     tags: ["monitor"],
     method: "GET",
-    path: "/overview",
+    path: "/history",
   })
   .output(
     z.array(
@@ -41,6 +41,7 @@ const history = oc
             success: z.number(),
             fail: z.number(),
             day: z.iso.datetime(),
+            totalDowntime: z.number().optional(),
           })
         ),
       })

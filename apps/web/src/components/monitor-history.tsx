@@ -1,4 +1,5 @@
-import { format } from "date-fns";
+import { format, formatDistance } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -46,30 +47,42 @@ function MonitorStatusDay(v: MonitorStatusDay) {
         className="w-44 border bg-background p-1.5 text-foreground shadow"
         sideOffset={4}
       >
-        <div className="grid grid-cols-[auto_1fr] gap-2">
-          <div className={cn("h-full w-1 rounded-full", getColors(v))} />
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">{getDescription(v)}</span>
-              <span className="text-muted-foreground text-sm">
-                {format(v.day, "MMM d")}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>
-                <span className="font-mono text-monitor-status-operational text-sm">
-                  {v.total}
-                </span>{" "}
-                requests
-              </span>
-              <span>
-                <span className="font-mono text-monitor-status-down text-sm">
-                  {v.fail}
-                </span>{" "}
-                failed
-              </span>
+        <div className="space-y-2">
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            <div className={cn("h-full w-1 rounded-full", getColors(v))} />
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-sm">
+                  {getDescription(v)}
+                </span>
+                <span className="text-muted-foreground text-sm">
+                  {format(v.day, "MMM d")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>
+                  <span className="font-mono text-monitor-status-operational text-sm">
+                    {v.total}
+                  </span>{" "}
+                  requests
+                </span>
+                <span>
+                  <span className="font-mono text-monitor-status-down text-sm">
+                    {v.fail}
+                  </span>{" "}
+                  failed
+                </span>
+              </div>
             </div>
           </div>
+          {v.totalDowntime && (
+            <>
+              <Separator />
+              <span className="font-medium text-muted-foreground">
+                Downtime for {formatDistance(0, v.totalDowntime * 1000)}
+              </span>
+            </>
+          )}
         </div>
       </TooltipContent>
     </Tooltip>

@@ -1,10 +1,10 @@
-import contract from "@/contract";
 import { implement } from "@orpc/server";
 import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
 import { monitors as monitorsArray } from "@ping-status/monitor";
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import { and, count, desc, gte, inArray, isNull, sql } from "drizzle-orm";
+import contract from "@/contract";
 
 const router = implement(contract);
 
@@ -52,17 +52,45 @@ const history = router.history.handler(async () => {
   // Group by monitor
   const statsByMonitor = Object.groupBy(dailyStats, (stat) => stat.monitorName);
 
+  const dailyDowntime = await db
+    .select({
+      monitorName: incident.monitorName,
+      day: sql<string>`DATE(${incident.openedAt})`,
+      totalDowntime:
+        sql<number>`SUM(EXTRACT(EPOCH FROM (${incident.closedAt} - ${incident.openedAt})))`.mapWith(
+          (v) => Math.round(v)
+        ),
+    })
+    .from(incident)
+    .where(
+      and(
+        inArray(incident.monitorName, monitorNames),
+        gte(incident.openedAt, startOfPeriod)
+      )
+    )
+    .groupBy(incident.monitorName, sql`DATE(${incident.openedAt})`);
+
+  const downtimeByMonitor = Object.groupBy(
+    dailyDowntime,
+    (downtime) => downtime.monitorName
+  );
+
   // Build the response structure
   const result = monitorNames.map((monitor) => {
     const monitorStats = statsByMonitor[monitor] || [];
+    const monitorDowntime = downtimeByMonitor[monitor] || [];
 
     // Create a map of existing days for quick lookup
     const statsByDay = new Map(monitorStats.map((stat) => [stat.day, stat]));
+    const downtimeByDay = new Map(
+      monitorDowntime.map((downtime) => [downtime.day, downtime])
+    );
 
     // Fill in all days (including missing ones with 0 data)
     const dayData = days.map((day) => {
       const dayKey = format(day, "yyyy-MM-dd");
       const stat = statsByDay.get(dayKey);
+      const totalDowntime = downtimeByDay.get(dayKey)?.totalDowntime;
 
       if (stat) {
         return {
@@ -70,6 +98,7 @@ const history = router.history.handler(async () => {
           total: stat.total,
           success: stat.success,
           fail: stat.fail,
+          totalDowntime,
         };
       }
 
