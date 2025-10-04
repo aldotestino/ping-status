@@ -102,7 +102,7 @@ function MonitorHistory({
           {successRate.toFixed(2)}%
         </span>
       </div>
-      <div className="grid h-12 grid-cols-[repeat(45,1fr)] gap-1">
+      <div className="grid h-12 grid-cols-[repeat(45,1fr)] gap-0.5 md:gap-1">
         {days.map((v) => (
           <MonitorStatusDay key={v.day} {...v} />
         ))}

@@ -39,10 +39,10 @@ function RouteComponent() {
       </p>
       {lastWeekLatencies.map(({ monitor, latencies }) => (
         <div className="space-y-2" key={monitor.name}>
-          <div className="flex justify-between">
-            <div className="space-y-0.5">
+          <div className="flex justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-0.5">
               <p className="font-semibold">{monitor.name}</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="truncate text-muted-foreground text-sm">
                 <span className="font-semibold">[{monitor.method}]</span>{" "}
                 {monitor.url}
               </p>
