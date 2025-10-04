@@ -4,7 +4,6 @@ import { CircleSlash, Filter, PartyPopper } from "lucide-react";
 import { z } from "zod/v4";
 import { IncidentCard } from "@/components/incident-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +11,13 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/lib/orpc";
 
@@ -41,8 +47,10 @@ function RouteComponent() {
     <main className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground">
-          Last{" "}
-          <span className="font-semibold text-foreground">10 incidents</span>{" "}
+          Last 10{" "}
+          <span className="font-semibold text-foreground">
+            {status !== "all" ? status : ""} incidents
+          </span>{" "}
           and their durations.
         </p>
 
@@ -82,16 +90,26 @@ function RouteComponent() {
       )}
 
       {incidents?.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="grid place-items-center gap-2 text-muted-foreground">
-            {status === "open" ? (
-              <PartyPopper className="size-10" />
-            ) : (
-              <CircleSlash className="size-10" />
-            )}
-            <p>No {status !== "all" && status} incidents found</p>
-          </CardContent>
-        </Card>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              {status === "open" ? <PartyPopper /> : <CircleSlash />}
+            </EmptyMedia>
+            <EmptyTitle>
+              {status === "open" && "Everything's vibing perfectly!"}
+              {status === "closed" && "No closed incidents"}
+              {status === "all" && "Squeaky clean incident history"}
+            </EmptyTitle>
+            <EmptyDescription>
+              {status === "open" &&
+                "Your services are running smoother than a freshly zambonied ice rink. Our monitoring hamsters are getting bored over here!"}
+              {status === "closed" &&
+                "No resolved incidents to show. Either everything's been perfect, or we just got started!"}
+              {status === "all" &&
+                "Not a single incident in sight. You're either a DevOps wizard or this is a brand new setup. Either way, impressive!"}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <div className="space-y-4">
           {incidents?.map((incident) => (

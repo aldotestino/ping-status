@@ -44,7 +44,7 @@ function MonitorStatusDay(v: MonitorStatusDay) {
       </TooltipTrigger>
       <TooltipContent
         arrow={false}
-        className="w-44 border bg-background p-1.5 text-foreground shadow"
+        className="w-52 border bg-background p-1.5 text-foreground shadow"
         sideOffset={4}
       >
         <div className="space-y-2">
@@ -61,13 +61,13 @@ function MonitorStatusDay(v: MonitorStatusDay) {
               </div>
               <div className="flex items-center justify-between">
                 <span>
-                  <span className="font-mono text-monitor-status-operational text-sm">
+                  <span className="text-monitor-status-operational text-sm">
                     {v.total}
                   </span>{" "}
                   requests
                 </span>
                 <span>
-                  <span className="font-mono text-monitor-status-down text-sm">
+                  <span className="text-monitor-status-down text-sm">
                     {v.fail}
                   </span>{" "}
                   failed
@@ -98,7 +98,7 @@ function MonitorHistory({
     <div className="space-y-2">
       <div className="flex justify-between">
         <span className="font-semibold">{monitorName}</span>
-        <span className="font-mono text-muted-foreground text-sm">
+        <span className="text-muted-foreground text-sm">
           {successRate.toFixed(2)}%
         </span>
       </div>

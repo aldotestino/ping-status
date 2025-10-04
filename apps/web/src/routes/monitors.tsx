@@ -43,9 +43,7 @@ function RouteComponent() {
             <div className="space-y-0.5">
               <p className="font-semibold">{monitor.name}</p>
               <p className="text-muted-foreground text-sm">
-                <span className="font-mono font-semibold">
-                  [{monitor.method}]
-                </span>{" "}
+                <span className="font-semibold">[{monitor.method}]</span>{" "}
                 {monitor.url}
               </p>
             </div>
