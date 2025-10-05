@@ -1,8 +1,9 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from "recharts";
 import { z } from "zod/v4";
+import CopyButton from "@/components/copy-button";
 import MonitorStat from "@/components/monitor-stat";
 import {
   type ChartConfig,
@@ -14,12 +15,14 @@ import {
 } from "@/components/ui/chart";
 import {
   Item,
+  ItemActions,
   ItemContent,
   ItemDescription,
   ItemTitle,
 } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/lib/orpc";
+import { getStatusBadge } from "@/lib/utils";
 
 export const Route = createFileRoute("/monitors/$monitorName")({
   validateSearch: z.object({
@@ -58,7 +61,7 @@ export const Route = createFileRoute("/monitors/$monitorName")({
   component: RouteComponent,
 });
 
-const chartConfig = {
+const pingResultsChartConfig = {
   success: {
     label: "Success",
     color: "var(--monitor-status-operational)",
@@ -69,12 +72,19 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+const pingLatenciesChartConfig = {
+  p95: {
+    label: "p95",
+    color: "var(--monitor-status-operational)",
+  },
+} satisfies ChartConfig;
+
 function RouteComponent() {
   const { monitorName } = Route.useParams();
   const { period } = Route.useSearch();
 
   const {
-    data: { monitor, stats, pingResults },
+    data: { monitor, stats, pingResults, pingLatencies },
   } = useSuspenseQuery(
     orpc.monitorDetails.queryOptions({
       input: {
@@ -94,6 +104,11 @@ function RouteComponent() {
             {monitor.url}
           </ItemDescription>
         </ItemContent>
+        <ItemActions>
+          <CopyButton value={getStatusBadge(monitor.name)} variant="outline">
+            Get Status Badge
+          </CopyButton>
+        </ItemActions>
       </Item>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -131,9 +146,9 @@ function RouteComponent() {
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         <p className="text-muted-foreground">Ping results by hour</p>
-        <ChartContainer className="h-32 w-full" config={chartConfig}>
+        <ChartContainer className="h-32 w-full" config={pingResultsChartConfig}>
           <BarChart accessibilityLayer data={pingResults}>
             <XAxis dataKey="date" hide />
             <CartesianGrid vertical={false} />
@@ -153,6 +168,34 @@ function RouteComponent() {
             />
             <Bar dataKey="fail" fill="var(--monitor-status-down)" stackId="a" />
           </BarChart>
+        </ChartContainer>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-muted-foreground">Ping latencies by hour</p>
+        <ChartContainer
+          className="h-32 w-full"
+          config={pingLatenciesChartConfig}
+        >
+          <LineChart accessibilityLayer data={pingLatencies}>
+            <XAxis dataKey="date" hide />
+            <CartesianGrid vertical={false} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  indicator="line"
+                  labelFormatter={(date) => format(date, "MMM d, HH:mm")}
+                />
+              }
+            />
+            <Line
+              dataKey="p95"
+              dot={false}
+              stroke="var(--monitor-status-operational)"
+              strokeWidth={2}
+              type="monotone"
+            />
+          </LineChart>
         </ChartContainer>
       </div>
     </main>

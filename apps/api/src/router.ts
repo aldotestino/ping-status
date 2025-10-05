@@ -421,9 +421,29 @@ const monitorDetails = router.monitorDetails.handler(
       .groupBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`)
       .orderBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`);
 
+    const pingLatenciesByHour = await db
+      .select({
+        date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
+          (v) => new Date(v).toISOString()
+        ),
+        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+      })
+      .from(pingResult)
+      .where(
+        and(
+          gte(pingResult.createdAt, currentFrom),
+          eq(pingResult.monitorName, input.monitorName)
+        )
+      )
+      .groupBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`)
+      .orderBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`);
+
     return {
       monitor,
       pingResults: pingResultsByHour,
+      pingLatencies: pingLatenciesByHour,
       stats: {
         total: currentStats.total,
         lastTimestamp: currentStats.lastTimestamp?.toISOString() ?? null,

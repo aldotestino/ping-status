@@ -52,6 +52,12 @@ const monitorDetails = oc
           fail: z.number().min(0),
         })
       ),
+      pingLatencies: z.array(
+        z.object({
+          date: z.iso.datetime(),
+          p95: z.number().min(0),
+        })
+      ),
       stats: z.object({
         total: z.number().min(0),
         lastTimestamp: z.iso.datetime().nullable(),
