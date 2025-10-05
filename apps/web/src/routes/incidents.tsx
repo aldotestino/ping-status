@@ -35,11 +35,11 @@ export const Route = createFileRoute("/incidents")({
       }),
     ],
   },
-  loaderDeps: ({ search }) => search,
-  loader: ({ context: { queryClient }, deps }) =>
-    queryClient.prefetchQuery(
-      orpc.incidents.queryOptions({ input: { status: deps.status } })
-    ),
+  // loaderDeps: ({ search }) => search,
+  // loader: ({ context: { queryClient }, deps }) =>
+  //   queryClient.ensureQueryData(
+  //     orpc.incidents.queryOptions({ input: { status: deps.status } })
+  //   ),
   component: RouteComponent,
 });
 

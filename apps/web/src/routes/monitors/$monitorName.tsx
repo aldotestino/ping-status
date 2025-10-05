@@ -1,7 +1,17 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
+import { format } from "date-fns";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import { z } from "zod/v4";
 import MonitorStat from "@/components/monitor-stat";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import {
   Item,
   ItemContent,
@@ -35,17 +45,36 @@ export const Route = createFileRoute("/monitors/$monitorName")({
   pendingComponent: () => (
     <main className="space-y-6">
       <Skeleton className="h-16" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+      </div>
     </main>
   ),
   component: RouteComponent,
 });
+
+const chartConfig = {
+  success: {
+    label: "Success",
+    color: "var(--monitor-status-operational)",
+  },
+  fail: {
+    label: "Fail",
+    color: "var(--monitor-status-down)",
+  },
+} satisfies ChartConfig;
 
 function RouteComponent() {
   const { monitorName } = Route.useParams();
   const { period } = Route.useSearch();
 
   const {
-    data: { monitor, stats },
+    data: { monitor, stats, pingResults },
   } = useSuspenseQuery(
     orpc.monitorDetails.queryOptions({
       input: {
@@ -100,6 +129,31 @@ function RouteComponent() {
           unit="ms"
           value={stats.p99.value}
         />
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-muted-foreground">Ping results by hour</p>
+        <ChartContainer className="h-32 w-full" config={chartConfig}>
+          <BarChart accessibilityLayer data={pingResults}>
+            <XAxis dataKey="date" hide />
+            <CartesianGrid vertical={false} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  indicator="line"
+                  labelFormatter={(date) => format(date, "MMM d, HH:mm")}
+                />
+              }
+            />
+            <ChartLegend content={<ChartLegendContent />} />
+            <Bar
+              dataKey="success"
+              fill="var(--monitor-status-operational)"
+              stackId="a"
+            />
+            <Bar dataKey="fail" fill="var(--monitor-status-down)" stackId="a" />
+          </BarChart>
+        </ChartContainer>
       </div>
     </main>
   );
