@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/chart";
 import { orpc } from "@/lib/orpc";
 
-export const Route = createFileRoute("/monitors")({
+export const Route = createFileRoute("/monitors/")({
   component: RouteComponent,
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(orpc.lastWeekLatencies.queryOptions()),
@@ -47,8 +47,11 @@ function RouteComponent() {
                 {monitor.url}
               </p>
             </div>
-            <Button asChild variant="outline">
-              <Link to={"/"}>
+            <Button asChild variant="ghost">
+              <Link
+                params={{ monitorName: monitor.name }}
+                to="/monitors/$monitorName"
+              >
                 Details
                 <ChevronRight />
               </Link>

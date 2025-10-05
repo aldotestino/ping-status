@@ -25,6 +25,39 @@ const monitors = oc
   })
   .output(z.array(monitorSchema.omit({ validator: true })));
 
+const monitorDetails = oc
+  .route({
+    tags: ["monitor"],
+    method: "POST",
+    path: "/monitors/{monitorName}",
+  })
+  .errors({
+    NOT_FOUND: {
+      message: "Monitor not found",
+    },
+  })
+  .input(
+    z.object({
+      monitorName: z.string().trim().min(1),
+      period: z.number().min(1).max(30).default(7),
+    })
+  )
+  .output(
+    z.object({
+      monitor: monitorSchema.omit({ validator: true }),
+      stats: z.object({
+        uptime: z.number().min(0).max(100),
+        fails: z.number().min(0),
+        lastPing: z.iso.datetime(),
+        totalPings: z.number().min(0),
+        p50: z.number().min(0),
+        p75: z.number().min(0),
+        p95: z.number().min(0),
+        p99: z.number().min(0),
+      }),
+    })
+  );
+
 const history = oc
   .route({
     tags: ["monitor"],
@@ -141,4 +174,5 @@ export default {
   lastWeekLatencies,
   incidents,
   statusBadge,
+  monitorDetails,
 };

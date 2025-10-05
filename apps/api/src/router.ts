@@ -309,6 +309,30 @@ const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
   };
 });
 
+const monitorDetails = router.monitorDetails.handler(({ input, errors }) => {
+  const found = monitorsArray.find((m) => m.name === input.monitorName);
+
+  if (!found) {
+    throw errors.NOT_FOUND();
+  }
+
+  const { validator: _, ...monitor } = found;
+
+  return {
+    monitor,
+    stats: {
+      fails: 0,
+      uptime: 0,
+      lastPing: new Date().toISOString(),
+      totalPings: 0,
+      p50: 0,
+      p75: 0,
+      p95: 0,
+      p99: 0,
+    },
+  };
+});
+
 export default {
   health,
   monitors,
@@ -317,4 +341,5 @@ export default {
   lastWeekLatencies,
   incidents,
   statusBadge,
+  monitorDetails,
 };
