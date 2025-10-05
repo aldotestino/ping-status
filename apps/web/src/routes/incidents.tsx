@@ -31,15 +31,15 @@ export const Route = createFileRoute("/incidents")({
   search: {
     middlewares: [
       stripSearchParams({
-        status: ["open"],
+        status: [],
       }),
     ],
   },
-  // loaderDeps: ({ search }) => search.status,
-  // loader: ({ context: { queryClient }, deps }) =>
-  //   queryClient.prefetchQuery(
-  //     orpc.incidents.queryOptions({ input: { status: deps } })
-  //   ),
+  loaderDeps: ({ search }) => search,
+  loader: ({ context: { queryClient }, deps }) =>
+    queryClient.prefetchQuery(
+      orpc.incidents.queryOptions({ input: { status: deps.status } })
+    ),
   component: RouteComponent,
 });
 

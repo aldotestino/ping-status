@@ -46,12 +46,12 @@ const monitorDetails = oc
     z.object({
       monitor: monitorSchema.omit({ validator: true }),
       stats: z.object({
+        total: z.number().min(0),
         uptime: z.number().min(0).max(100),
         fails: z.number().min(0),
-        lastPing: z.iso.datetime(),
-        totalPings: z.number().min(0),
+        success: z.number().min(0),
+        lastTimestamp: z.iso.datetime().nullable(),
         p50: z.number().min(0),
-        p75: z.number().min(0),
         p95: z.number().min(0),
         p99: z.number().min(0),
       }),

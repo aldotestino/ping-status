@@ -14,6 +14,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  max,
   sql,
 } from "drizzle-orm";
 import contract from "@/contract";
@@ -309,29 +310,64 @@ const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
   };
 });
 
-const monitorDetails = router.monitorDetails.handler(({ input, errors }) => {
-  const found = monitorsArray.find((m) => m.name === input.monitorName);
+const monitorDetails = router.monitorDetails.handler(
+  async ({ input, errors }) => {
+    const found = monitorsArray.find((m) => m.name === input.monitorName);
 
-  if (!found) {
-    throw errors.NOT_FOUND();
+    if (!found) {
+      throw errors.NOT_FOUND();
+    }
+
+    const { validator: _, ...monitor } = found;
+
+    const from = subDays(new Date(), input.period);
+
+    const [stats] = await db
+      .select({
+        total: count(),
+        success:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+            Number
+          ),
+        fails:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+            Number
+          ),
+        lastTimestamp: max(pingResult.createdAt),
+        p50: sql`percentile_cont(0.50) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+        p99: sql`percentile_cont(0.99) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+      })
+      .from(pingResult)
+      .where(
+        and(
+          gte(pingResult.createdAt, from),
+          eq(pingResult.monitorName, input.monitorName)
+        )
+      );
+
+    if (!stats) {
+      throw errors.NOT_FOUND();
+    }
+
+    const uptime = (stats.success / stats.total) * 100;
+
+    return {
+      monitor,
+      stats: {
+        ...stats,
+        lastTimestamp: stats.lastTimestamp?.toISOString() ?? null,
+        uptime,
+      },
+    };
   }
-
-  const { validator: _, ...monitor } = found;
-
-  return {
-    monitor,
-    stats: {
-      fails: 0,
-      uptime: 0,
-      lastPing: new Date().toISOString(),
-      totalPings: 0,
-      p50: 0,
-      p75: 0,
-      p95: 0,
-      p99: 0,
-    },
-  };
-});
+);
 
 export default {
   health,
