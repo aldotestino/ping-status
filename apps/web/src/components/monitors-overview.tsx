@@ -28,7 +28,7 @@ function MonitorsOverview({ down, total, lastUpdated }: MonitorsOverviewProps) {
       </ItemMedia>
       <ItemContent>
         <ItemTitle
-          className={cn({
+          className={cn("text-base", {
             "text-monitor-status-operational": down === 0,
             "text-monitor-status-down": down >= 1,
           })}

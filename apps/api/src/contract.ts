@@ -47,13 +47,30 @@ const monitorDetails = oc
       monitor: monitorSchema.omit({ validator: true }),
       stats: z.object({
         total: z.number().min(0),
-        uptime: z.number().min(0).max(100),
-        fails: z.number().min(0),
-        success: z.number().min(0),
         lastTimestamp: z.iso.datetime().nullable(),
-        p50: z.number().min(0),
-        p95: z.number().min(0),
-        p99: z.number().min(0),
+        uptime: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        fails: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        success: z.object({
+          value: z.number().min(0),
+        }),
+        p50: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        p95: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        p99: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
       }),
     })
   );

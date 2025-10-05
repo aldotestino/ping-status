@@ -48,7 +48,7 @@ function RouteComponent() {
         <div className="space-y-2" key={monitor.name}>
           <Item className="p-0">
             <ItemContent>
-              <ItemTitle>{monitor.name}</ItemTitle>
+              <ItemTitle className="text-base">{monitor.name}</ItemTitle>
               <ItemDescription>
                 <span className="font-semibold">[{monitor.method}]</span>
                 {monitor.url}

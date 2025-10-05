@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import { z } from "zod/v4";
+import MonitorStat from "@/components/monitor-stat";
 import {
   Item,
   ItemContent,
@@ -58,68 +59,47 @@ function RouteComponent() {
     <main className="space-y-6">
       <Item className="p-0">
         <ItemContent>
-          <ItemTitle>{monitor.name}</ItemTitle>
+          <ItemTitle className="text-base">{monitor.name}</ItemTitle>
           <ItemDescription>
             <span className="font-semibold">[{monitor.method}]</span>{" "}
             {monitor.url}
           </ItemDescription>
         </ItemContent>
       </Item>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <Item variant="outline">
-          <ItemContent>
-            <ItemDescription>Uptime</ItemDescription>
-            <ItemTitle className="text-lg">
-              {stats.uptime.toFixed(2)}
-              <span className="text-muted-foreground text-sm">%</span>
-            </ItemTitle>
-          </ItemContent>
-        </Item>
-        <Item variant="outline">
-          <ItemContent>
-            <ItemDescription>Fails</ItemDescription>
-            <ItemTitle className="text-lg">
-              {stats.fails}
-              <span className="text-muted-foreground text-sm">#</span>
-            </ItemTitle>
-          </ItemContent>
-        </Item>
-        <Item variant="outline">
-          <ItemContent>
-            <ItemDescription>Total Pings</ItemDescription>
-            <ItemTitle className="text-lg">
-              {stats.total}
-              <span className="text-muted-foreground text-sm">#</span>
-            </ItemTitle>
-          </ItemContent>
-        </Item>
-        <Item variant="outline">
-          <ItemContent>
-            <ItemDescription>P50</ItemDescription>
-            <ItemTitle className="text-lg">
-              {stats.p50}
-              <span className="text-muted-foreground text-sm">ms</span>
-            </ItemTitle>
-          </ItemContent>
-        </Item>
-        <Item variant="outline">
-          <ItemContent>
-            <ItemDescription>P95</ItemDescription>
-            <ItemTitle className="text-lg">
-              {stats.p95}
-              <span className="text-muted-foreground text-sm">ms</span>
-            </ItemTitle>
-          </ItemContent>
-        </Item>
-        <Item variant="outline">
-          <ItemContent>
-            <ItemDescription>P99</ItemDescription>
-            <ItemTitle className="text-lg">
-              {stats.p99}
-              <span className="text-muted-foreground text-sm">ms</span>
-            </ItemTitle>
-          </ItemContent>
-        </Item>
+        <MonitorStat
+          change={stats.uptime.change}
+          name="Uptime"
+          positiveChangeIsGood
+          unit="%"
+          value={stats.uptime.value.toFixed(2)}
+        />
+        <MonitorStat
+          change={stats.fails.change}
+          name="Fails"
+          unit="#"
+          value={stats.fails.value}
+        />
+        <MonitorStat name="Total Pings" unit="#" value={stats.total} />
+        <MonitorStat
+          change={stats.p50.change}
+          name="p50"
+          unit="ms"
+          value={stats.p50.value}
+        />
+        <MonitorStat
+          change={stats.p95.change}
+          name="p95"
+          unit="ms"
+          value={stats.p95.value}
+        />
+        <MonitorStat
+          change={stats.p99.change}
+          name="p99"
+          unit="ms"
+          value={stats.p99.value}
+        />
       </div>
     </main>
   );
