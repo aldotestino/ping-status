@@ -45,6 +45,13 @@ const monitorDetails = oc
   .output(
     z.object({
       monitor: monitorSchema.omit({ validator: true }),
+      pingResults: z.array(
+        z.object({
+          date: z.iso.datetime(),
+          success: z.number().min(0),
+          fail: z.number().min(0),
+        })
+      ),
       stats: z.object({
         total: z.number().min(0),
         lastTimestamp: z.iso.datetime().nullable(),

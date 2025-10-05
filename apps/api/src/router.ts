@@ -184,8 +184,8 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
   const latencies = await db
     .select({
       monitorName: pingResult.monitorName,
-      date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
-        (v) => new Date(v).toISOString()
+      date: sql`DATE_TRUNC('hour', ${pingResult.createdAt})`.mapWith((v) =>
+        new Date(v).toISOString()
       ),
       p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
         (v) => Math.round(v)
@@ -398,8 +398,31 @@ const monitorDetails = router.monitorDetails.handler(
 
     const previousUptime = (previousStats.success / previousStats.total) * 100;
 
+    const pingResultsByHour = await db
+      .select({
+        date: sql`DATE_TRUNC('hour', ${pingResult.createdAt})`.mapWith((v) =>
+          new Date(v).toISOString()
+        ),
+        success:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+            Number
+          ),
+        fail: sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+          Number
+        ),
+      })
+      .from(pingResult)
+      .where(
+        and(
+          gte(pingResult.createdAt, currentFrom),
+          eq(pingResult.monitorName, input.monitorName)
+        )
+      )
+      .groupBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`);
+
     return {
       monitor,
+      pingResults: pingResultsByHour,
       stats: {
         total: currentStats.total,
         lastTimestamp: currentStats.lastTimestamp?.toISOString() ?? null,
