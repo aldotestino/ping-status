@@ -28,7 +28,7 @@ function MonitorStat({
   return (
     <Item variant="outline" {...props}>
       <ItemContent>
-        <ItemDescription>{name}</ItemDescription>
+        <ItemDescription className="uppercase">{name}</ItemDescription>
         <ItemTitle className="text-lg">
           {value}
           {unit && (
@@ -36,7 +36,7 @@ function MonitorStat({
           )}
         </ItemTitle>
       </ItemContent>
-      {change && (
+      {typeof change === "number" && change !== 0 && (
         <ItemActions>
           <Badge variant="outline">
             {change > 0 ? (
@@ -56,7 +56,7 @@ function MonitorStat({
                 )}
               />
             )}
-            {change.toFixed(2)}%
+            {Math.abs(change).toFixed(2)}%
           </Badge>
         </ItemActions>
       )}

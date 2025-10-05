@@ -1,7 +1,15 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { z } from "zod/v4";
 import CopyButton from "@/components/copy-button";
 import MonitorStat from "@/components/monitor-stat";
@@ -20,6 +28,15 @@ import {
   ItemDescription,
   ItemTitle,
 } from "@/components/ui/item";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/lib/orpc";
 import { getStatusBadge } from "@/lib/utils";
@@ -82,6 +99,7 @@ const pingLatenciesChartConfig = {
 function RouteComponent() {
   const { monitorName } = Route.useParams();
   const { period } = Route.useSearch();
+  const navigate = Route.useNavigate();
 
   const {
     data: { monitor, stats, pingResults, pingLatencies },
@@ -111,46 +129,73 @@ function RouteComponent() {
         </ItemActions>
       </Item>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <MonitorStat
-          change={stats.uptime.change}
-          name="Uptime"
-          positiveChangeIsGood
-          unit="%"
-          value={stats.uptime.value.toFixed(2)}
-        />
-        <MonitorStat
-          change={stats.fails.change}
-          name="Fails"
-          unit="#"
-          value={stats.fails.value}
-        />
-        <MonitorStat name="Total Pings" unit="#" value={stats.total} />
-        <MonitorStat
-          change={stats.p50.change}
-          name="p50"
-          unit="ms"
-          value={stats.p50.value}
-        />
-        <MonitorStat
-          change={stats.p95.change}
-          name="p95"
-          unit="ms"
-          value={stats.p95.value}
-        />
-        <MonitorStat
-          change={stats.p99.change}
-          name="p99"
-          unit="ms"
-          value={stats.p99.value}
-        />
+      <div className="space-y-2">
+        <Select
+          onValueChange={(value) => {
+            navigate({ search: { period: Number(value) } });
+          }}
+          value={period.toString()}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Period</SelectLabel>
+              <SelectItem value="1">Last day</SelectItem>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="14">Last 14 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          <MonitorStat
+            change={stats.uptime.change}
+            name="Uptime"
+            positiveChangeIsGood
+            unit="%"
+            value={stats.uptime.value.toFixed(2)}
+          />
+          <MonitorStat
+            change={stats.fails.change}
+            name="Failing"
+            unit="#"
+            value={stats.fails.value}
+          />
+          <MonitorStat name="Requests" unit="#" value={stats.total} />
+          <MonitorStat
+            change={stats.p50.change}
+            name="p50"
+            unit="ms"
+            value={stats.p50.value}
+          />
+          <MonitorStat
+            change={stats.p95.change}
+            name="p95"
+            unit="ms"
+            value={stats.p95.value}
+          />
+          <MonitorStat
+            change={stats.p99.change}
+            name="p99"
+            unit="ms"
+            value={stats.p99.value}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
-        <p className="text-muted-foreground">Ping results by hour</p>
+        <Item className="p-0">
+          <ItemContent>
+            <ItemTitle className="text-base">Uptime</ItemTitle>
+            <ItemDescription>Ping results by hour</ItemDescription>
+          </ItemContent>
+        </Item>
         <ChartContainer className="h-32 w-full" config={pingResultsChartConfig}>
           <BarChart accessibilityLayer data={pingResults}>
             <XAxis dataKey="date" hide />
+            <YAxis axisLine={false} orientation="right" tickLine={false} />
             <CartesianGrid vertical={false} />
             <ChartTooltip
               content={
@@ -172,13 +217,24 @@ function RouteComponent() {
       </div>
 
       <div className="space-y-2">
-        <p className="text-muted-foreground">Ping latencies by hour</p>
+        <Item className="p-0">
+          <ItemContent>
+            <ItemTitle className="text-base">Latencies</ItemTitle>
+            <ItemDescription>P95 latencies by hour</ItemDescription>
+          </ItemContent>
+        </Item>
         <ChartContainer
           className="h-32 w-full"
           config={pingLatenciesChartConfig}
         >
           <LineChart accessibilityLayer data={pingLatencies}>
             <XAxis dataKey="date" hide />
+            <YAxis
+              axisLine={false}
+              orientation="right"
+              tickFormatter={(value) => `${value}ms`}
+              tickLine={false}
+            />
             <CartesianGrid vertical={false} />
             <ChartTooltip
               content={

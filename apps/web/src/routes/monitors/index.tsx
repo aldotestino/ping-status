@@ -40,7 +40,7 @@ function RouteComponent() {
   return (
     <main className="space-y-6">
       <p className="text-muted-foreground">
-        <span className="font-semibold text-foreground">p95</span> latencies
+        <span className="font-semibold text-foreground">P95</span> latencies
         over the{" "}
         <span className="font-semibold text-foreground">last 7 days</span>.
       </p>

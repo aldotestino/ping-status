@@ -14,6 +14,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  lt,
   max,
   sql,
 } from "drizzle-orm";
@@ -311,7 +312,11 @@ const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
 });
 
 function calculatePercentageChange(current: number, previous: number) {
-  return ((current - previous) / previous) * 100 || 0;
+  if (!previous || previous === 0) {
+    return 0;
+  }
+
+  return ((current - previous) / previous) * 100;
 }
 
 const monitorDetails = router.monitorDetails.handler(
@@ -388,6 +393,7 @@ const monitorDetails = router.monitorDetails.handler(
       .where(
         and(
           gte(pingResult.createdAt, previousFrom),
+          lt(pingResult.createdAt, currentFrom),
           eq(pingResult.monitorName, input.monitorName)
         )
       );

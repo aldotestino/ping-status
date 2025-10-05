@@ -71,6 +71,7 @@ const monitorDetails = oc
         }),
         success: z.object({
           value: z.number().min(0),
+          change: z.number(),
         }),
         p50: z.object({
           value: z.number().min(0),
