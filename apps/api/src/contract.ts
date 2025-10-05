@@ -84,7 +84,7 @@ const lastWeekLatencies = oc
 const incidents = oc
   .route({
     tags: ["monitor"],
-    method: "GET",
+    method: "POST",
     path: "/incidents",
   })
   .errors({
@@ -94,7 +94,11 @@ const incidents = oc
   })
   .input(
     z.object({
-      status: z.enum(["open", "closed", "all"]).default("open"),
+      status: z
+        .array(z.enum(["open", "closed"]))
+        .max(2)
+        .default([])
+        .transform((arr) => Array.from(new Set(arr))),
       monitorName: z.string().trim().min(1).optional(),
       page: z.coerce.number().default(1),
       limit: z.coerce.number().default(10),

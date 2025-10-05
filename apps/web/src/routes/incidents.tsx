@@ -6,9 +6,8 @@ import { IncidentCard } from "@/components/incident-card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -23,15 +22,24 @@ import { orpc } from "@/lib/orpc";
 
 export const Route = createFileRoute("/incidents")({
   validateSearch: z.object({
-    status: z.enum(["open", "closed", "all"]).default("open"),
+    status: z
+      .array(z.enum(["open", "closed"]))
+      .max(2)
+      .default(["open"])
+      .transform((arr) => Array.from(new Set(arr))),
   }),
   search: {
     middlewares: [
       stripSearchParams({
-        status: "open",
+        status: ["open"],
       }),
     ],
   },
+  // loaderDeps: ({ search }) => search.status,
+  // loader: ({ context: { queryClient }, deps }) =>
+  //   queryClient.prefetchQuery(
+  //     orpc.incidents.queryOptions({ input: { status: deps } })
+  //   ),
   component: RouteComponent,
 });
 
@@ -49,7 +57,7 @@ function RouteComponent() {
         <p className="text-muted-foreground">
           Last 10{" "}
           <span className="font-semibold text-foreground">
-            {status !== "all" ? status : ""} incidents
+            {status.length === 2 ? "All" : status.join(", ")} incidents
           </span>{" "}
           and their durations.
         </p>
@@ -62,20 +70,28 @@ function RouteComponent() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup
-              onValueChange={(value) =>
-                navigate({
-                  search: { status: value as "open" | "closed" | "all" },
-                })
-              }
-              value={status}
+            <DropdownMenuCheckboxItem
+              checked={status.includes("open")}
+              onCheckedChange={(checked) => {
+                const newStatus = checked
+                  ? [...new Set([...status, "open" as const])]
+                  : status.filter((s) => s !== "open");
+                navigate({ search: { status: newStatus } });
+              }}
             >
-              <DropdownMenuRadioItem value="open">Open</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="closed">
-                Closed
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
+              Open
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={status.includes("closed")}
+              onCheckedChange={(checked) => {
+                const newStatus = checked
+                  ? [...new Set([...status, "closed" as const])]
+                  : status.filter((s) => s !== "closed");
+                navigate({ search: { status: newStatus } });
+              }}
+            >
+              Closed
+            </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -93,19 +109,29 @@ function RouteComponent() {
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              {status === "open" ? <PartyPopper /> : <CircleSlash />}
+              {status.length === 1 && status.includes("open") ? (
+                <PartyPopper />
+              ) : (
+                <CircleSlash />
+              )}
             </EmptyMedia>
             <EmptyTitle>
-              {status === "open" && "Everything's vibing perfectly!"}
-              {status === "closed" && "No closed incidents"}
-              {status === "all" && "Squeaky clean incident history"}
+              {status.length === 1 &&
+                status.includes("open") &&
+                "Everything's vibing perfectly!"}
+              {status.length === 1 &&
+                status.includes("closed") &&
+                "No closed incidents"}
+              {status.length === 2 && "Squeaky clean incident history"}
             </EmptyTitle>
             <EmptyDescription>
-              {status === "open" &&
+              {status.length === 1 &&
+                status.includes("open") &&
                 "Your services are running smoother than a freshly zambonied ice rink. Our monitoring hamsters are getting bored over here!"}
-              {status === "closed" &&
+              {status.length === 1 &&
+                status.includes("closed") &&
                 "No resolved incidents to show. Either everything's been perfect, or we just got started!"}
-              {status === "all" &&
+              {status.length === 2 &&
                 "Not a single incident in sight. You're either a DevOps wizard or this is a brand new setup. Either way, impressive!"}
             </EmptyDescription>
           </EmptyHeader>

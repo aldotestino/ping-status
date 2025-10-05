@@ -223,7 +223,7 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
 });
 
 const incidents = router.incidents.handler(({ input, errors }) => {
-  const statusFilter = {
+  const conditionByStatusFilter = {
     all: undefined,
     open: isNull(incident.closedAt),
     closed: isNotNull(incident.closedAt),
@@ -236,19 +236,21 @@ const incidents = router.incidents.handler(({ input, errors }) => {
     throw errors.NOT_FOUND();
   }
 
+  const statusFilter =
+    input.status.length === 1 && input.status[0] ? input.status[0] : "all";
+
   return db
     .select()
     .from(incident)
     .where(
       and(
-        inArray(
-          incident.monitorName,
-          monitorsArray.map((m) => m.name)
-        ),
-        statusFilter[input.status],
         input.monitorName
           ? eq(incident.monitorName, input.monitorName)
-          : undefined
+          : inArray(
+              incident.monitorName,
+              monitorsArray.map((m) => m.name)
+            ),
+        conditionByStatusFilter[statusFilter]
       )
     )
     .limit(input.limit)
