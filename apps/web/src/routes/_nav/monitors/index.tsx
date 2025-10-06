@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/item";
 import { orpc } from "@/lib/orpc";
 
-export const Route = createFileRoute("/monitors/")({
+export const Route = createFileRoute("/_nav/monitors/")({
   component: RouteComponent,
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(orpc.lastWeekLatencies.queryOptions()),
@@ -38,7 +38,7 @@ function RouteComponent() {
   );
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto max-w-screen-lg space-y-6 px-4 py-10 md:px-6">
       <p className="text-muted-foreground">
         <span className="font-semibold text-foreground">P95</span> latencies
         over the{" "}

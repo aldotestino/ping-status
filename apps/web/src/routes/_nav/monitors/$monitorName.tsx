@@ -41,7 +41,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/lib/orpc";
 import { getStatusBadge } from "@/lib/utils";
 
-export const Route = createFileRoute("/monitors/$monitorName")({
+export const Route = createFileRoute("/_nav/monitors/$monitorName")({
   validateSearch: z.object({
     period: z.coerce.number().min(1).max(30).default(7),
   }),
@@ -63,7 +63,7 @@ export const Route = createFileRoute("/monitors/$monitorName")({
       })
     ),
   pendingComponent: () => (
-    <main className="space-y-6">
+    <main className="mx-auto max-w-screen-lg space-y-6 px-4 py-10 md:px-6">
       <Skeleton className="h-16" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         <Skeleton className="h-24" />
@@ -113,7 +113,7 @@ function RouteComponent() {
   );
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto max-w-screen-lg space-y-6 px-4 py-10 md:px-6">
       <Item className="p-0">
         <ItemContent>
           <ItemTitle className="text-base">{monitor.name}</ItemTitle>
