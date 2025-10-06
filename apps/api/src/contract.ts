@@ -25,6 +25,40 @@ const monitors = oc
   })
   .output(z.array(monitorSchema.omit({ validator: true })));
 
+const requests = oc
+  .route({
+    tags: ["monitor"],
+    method: "POST",
+    path: "/requests",
+  })
+  .errors({
+    NOT_FOUND: {
+      message: "Monitor not found",
+    },
+  })
+  .input(
+    z.object({
+      monitorName: z.array(z.string().trim().min(1)).default([]),
+      status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
+      validationCheck: z.array(z.enum(["success", "fail"])).default([]),
+      page: z.coerce.number().default(1),
+      limit: z.coerce.number().default(10),
+      sort: z
+        .object({
+          field: z.enum(["createdAt", "responseTime"]).default("createdAt"),
+          order: z.enum(["asc", "desc"]).default("desc"),
+        })
+        .default({ field: "createdAt", order: "desc" }),
+    })
+  )
+  .output(
+    z.array(
+      pingResultSchema.extend(
+        monitorSchema.pick({ url: true, method: true }).shape
+      )
+    )
+  );
+
 const monitorDetails = oc
   .route({
     tags: ["monitor"],
@@ -214,4 +248,5 @@ export default {
   incidents,
   statusBadge,
   monitorDetails,
+  requests,
 };

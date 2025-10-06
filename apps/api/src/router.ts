@@ -1,7 +1,7 @@
-import { implement } from "@orpc/server";
+import { implement, ORPCError } from "@orpc/server";
 import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
-import { monitors as monitorsArray } from "@ping-status/monitor";
+import { type Monitor, monitors as monitorsArray } from "@ping-status/monitor";
 import { makeBadge } from "badge-maker";
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import {
@@ -16,6 +16,7 @@ import {
   isNull,
   lt,
   max,
+  or,
   sql,
 } from "drizzle-orm";
 import contract from "@/contract";
@@ -502,6 +503,78 @@ const monitorDetails = router.monitorDetails.handler(
   }
 );
 
+export const requests = router.requests.handler(async ({ input, errors }) => {
+  const sortBy = {
+    "createdAt.asc": asc(pingResult.createdAt),
+    "createdAt.desc": desc(pingResult.createdAt),
+    "responseTime.asc": asc(pingResult.responseTime),
+    "responseTime.desc": desc(pingResult.responseTime),
+  };
+
+  const monitorNames = monitorsArray.map((m) => m.name);
+
+  if (
+    input.monitorName.length > 0 &&
+    input.monitorName.some((m1) => !monitorNames.includes(m1))
+  ) {
+    throw errors.NOT_FOUND();
+  }
+
+  const monitorNameCondition =
+    input.monitorName.length > 0
+      ? inArray(pingResult.monitorName, input.monitorName)
+      : inArray(pingResult.monitorName, monitorNames);
+
+  const statusConditions = {
+    "2xx": and(gte(pingResult.status, 200), lt(pingResult.status, 300)),
+    "4xx": and(gte(pingResult.status, 400), lt(pingResult.status, 500)),
+    "5xx": and(gte(pingResult.status, 500), lt(pingResult.status, 600)),
+  };
+
+  const validationCheckConditions = {
+    success: eq(pingResult.success, true),
+    fail: eq(pingResult.success, false),
+  };
+
+  const statusCondition = or(...input.status.map((s) => statusConditions[s]));
+  const validationCheckCondition = or(
+    ...input.validationCheck.map((v) => validationCheckConditions[v])
+  );
+
+  const pings = await db
+    .select()
+    .from(pingResult)
+    .where(and(monitorNameCondition, statusCondition, validationCheckCondition))
+    .limit(input.limit)
+    .offset((input.page - 1) * input.limit)
+    .orderBy(sortBy[`${input.sort.field}.${input.sort.order}`]);
+
+  const monitorByName = monitorsArray.reduce(
+    (acc, m) => {
+      acc[m.name] = {
+        url: m.url,
+        method: m.method,
+      };
+
+      return acc;
+    },
+    {} as Record<string, Pick<Monitor, "url" | "method">>
+  );
+
+  return pings.map((ping) => {
+    const m = monitorByName[ping.monitorName];
+
+    if (!m) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR");
+    }
+
+    return {
+      ...ping,
+      ...m,
+    };
+  });
+});
+
 export default {
   health,
   monitors,
@@ -511,4 +584,5 @@ export default {
   incidents,
   statusBadge,
   monitorDetails,
+  requests,
 };
