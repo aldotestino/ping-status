@@ -1,4 +1,10 @@
 import { format, formatDistance, formatDistanceToNow } from "date-fns";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -93,6 +99,33 @@ export function IncidentCard(incident: IncidentCardProps) {
                 )}
               </p>
             </div>
+          </>
+        )}
+
+        {incident.pingResults.length > 0 && (
+          <>
+            <Separator />
+            <Accordion collapsible type="single">
+              <AccordionItem className="border-0" value="messages">
+                <AccordionTrigger className="py-0 hover:no-underline">
+                  <Label className="cursor-pointer text-muted-foreground text-xs">
+                    Error Messages ({incident.pingResults.length})
+                  </Label>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-1 pt-2">
+                    {incident.pingResults.map(({ message, id, createdAt }) => (
+                      <p
+                        className="rounded-md bg-muted px-2 py-1.5 font-mono text-xs"
+                        key={id}
+                      >
+                        [{format(new Date(createdAt), "HH:mm")}] {message}
+                      </p>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </>
         )}
       </CardContent>

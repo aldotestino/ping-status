@@ -5,7 +5,7 @@ import {
   incidentRelations,
   pingResult,
   pingResultRelations,
-} from "@/schema";
+} from "./schema";
 
 const schema = {
   pingResult,

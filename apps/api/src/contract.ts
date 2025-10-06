@@ -1,5 +1,5 @@
 import { oc } from "@orpc/contract";
-import { incidentSchema } from "@ping-status/db/schema";
+import { incidentSchema, pingResultSchema } from "@ping-status/db/schema";
 import { monitorSchema } from "@ping-status/monitor";
 import { z } from "zod";
 
@@ -169,7 +169,15 @@ const incidents = oc
       order: z.enum(["asc", "desc"]).default("desc"),
     })
   )
-  .output(z.array(incidentSchema));
+  .output(
+    z.array(
+      incidentSchema.extend({
+        pingResults: z.array(
+          pingResultSchema.pick({ message: true, createdAt: true, id: true })
+        ),
+      })
+    )
+  );
 
 const statusBadge = oc
   .route({

@@ -241,25 +241,30 @@ const incidents = router.incidents.handler(({ input, errors }) => {
   const statusFilter =
     input.status.length === 1 && input.status[0] ? input.status[0] : "all";
 
-  return db
-    .select()
-    .from(incident)
-    .where(
-      and(
-        input.monitorName
-          ? eq(incident.monitorName, input.monitorName)
-          : inArray(
-              incident.monitorName,
-              monitorsArray.map((m) => m.name)
-            ),
-        conditionByStatusFilter[statusFilter]
-      )
-    )
-    .limit(input.limit)
-    .offset((input.page - 1) * input.limit)
-    .orderBy(
-      input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt)
-    );
+  return db.query.incident.findMany({
+    with: {
+      pingResults: {
+        columns: {
+          id: true,
+          createdAt: true,
+          message: true,
+        },
+      },
+    },
+    where: and(
+      input.monitorName
+        ? eq(incident.monitorName, input.monitorName)
+        : inArray(
+            incident.monitorName,
+            monitorsArray.map((m) => m.name)
+          ),
+      conditionByStatusFilter[statusFilter]
+    ),
+    limit: input.limit,
+    offset: (input.page - 1) * input.limit,
+    orderBy:
+      input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt),
+  });
 });
 
 const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {

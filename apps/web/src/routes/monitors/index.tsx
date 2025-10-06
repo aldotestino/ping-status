@@ -50,7 +50,7 @@ function RouteComponent() {
             <ItemContent>
               <ItemTitle className="text-base">{monitor.name}</ItemTitle>
               <ItemDescription>
-                <span className="font-semibold">[{monitor.method}]</span>
+                <span className="font-semibold">[{monitor.method}]</span>{" "}
                 {monitor.url}
               </ItemDescription>
             </ItemContent>
