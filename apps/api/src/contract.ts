@@ -25,6 +25,70 @@ const monitors = oc
   })
   .output(z.array(monitorSchema.omit({ validator: true })));
 
+const monitorDetails = oc
+  .route({
+    tags: ["monitor"],
+    method: "POST",
+    path: "/monitors/{monitorName}",
+  })
+  .errors({
+    NOT_FOUND: {
+      message: "Monitor not found",
+    },
+  })
+  .input(
+    z.object({
+      monitorName: z.string().trim().min(1),
+      period: z.number().min(1).max(30).default(7),
+    })
+  )
+  .output(
+    z.object({
+      monitor: monitorSchema.omit({ validator: true }),
+      pingResults: z.array(
+        z.object({
+          date: z.iso.datetime(),
+          success: z.number().min(0),
+          fail: z.number().min(0),
+        })
+      ),
+      pingLatencies: z.array(
+        z.object({
+          date: z.iso.datetime(),
+          p95: z.number().min(0),
+        })
+      ),
+      stats: z.object({
+        total: z.number().min(0),
+        lastTimestamp: z.iso.datetime().nullable(),
+        uptime: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        fails: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        success: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        p50: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        p95: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        p99: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+      }),
+    })
+  );
+
 const history = oc
   .route({
     tags: ["monitor"],
@@ -141,4 +205,5 @@ export default {
   lastWeekLatencies,
   incidents,
   statusBadge,
+  monitorDetails,
 };

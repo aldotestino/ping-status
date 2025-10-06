@@ -23,7 +23,7 @@ const navigationLinks = [
 
 export function Nav() {
   const location = useLocation({
-    select: ({ pathname }) => pathname,
+    select: ({ pathname }) => `/${pathname.split("/")[1]}`,
   });
 
   return (

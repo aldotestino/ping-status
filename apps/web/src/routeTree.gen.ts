@@ -9,15 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as MonitorsRouteImport } from './routes/monitors'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MonitorsIndexRouteImport } from './routes/monitors/index'
+import { Route as MonitorsMonitorNameRouteImport } from './routes/monitors/$monitorName'
 
-const MonitorsRoute = MonitorsRouteImport.update({
-  id: '/monitors',
-  path: '/monitors',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IncidentsRoute = IncidentsRouteImport.update({
   id: '/incidents',
   path: '/incidents',
@@ -28,46 +24,53 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonitorsIndexRoute = MonitorsIndexRouteImport.update({
+  id: '/monitors/',
+  path: '/monitors/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonitorsMonitorNameRoute = MonitorsMonitorNameRouteImport.update({
+  id: '/monitors/$monitorName',
+  path: '/monitors/$monitorName',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/incidents': typeof IncidentsRoute
-  '/monitors': typeof MonitorsRoute
+  '/monitors/$monitorName': typeof MonitorsMonitorNameRoute
+  '/monitors': typeof MonitorsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/incidents': typeof IncidentsRoute
-  '/monitors': typeof MonitorsRoute
+  '/monitors/$monitorName': typeof MonitorsMonitorNameRoute
+  '/monitors': typeof MonitorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/incidents': typeof IncidentsRoute
-  '/monitors': typeof MonitorsRoute
+  '/monitors/$monitorName': typeof MonitorsMonitorNameRoute
+  '/monitors/': typeof MonitorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/incidents' | '/monitors'
+  fullPaths: '/' | '/incidents' | '/monitors/$monitorName' | '/monitors'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/incidents' | '/monitors'
-  id: '__root__' | '/' | '/incidents' | '/monitors'
+  to: '/' | '/incidents' | '/monitors/$monitorName' | '/monitors'
+  id: '__root__' | '/' | '/incidents' | '/monitors/$monitorName' | '/monitors/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IncidentsRoute: typeof IncidentsRoute
-  MonitorsRoute: typeof MonitorsRoute
+  MonitorsMonitorNameRoute: typeof MonitorsMonitorNameRoute
+  MonitorsIndexRoute: typeof MonitorsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/monitors': {
-      id: '/monitors'
-      path: '/monitors'
-      fullPath: '/monitors'
-      preLoaderRoute: typeof MonitorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/incidents': {
       id: '/incidents'
       path: '/incidents'
@@ -82,13 +85,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/monitors/': {
+      id: '/monitors/'
+      path: '/monitors'
+      fullPath: '/monitors'
+      preLoaderRoute: typeof MonitorsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monitors/$monitorName': {
+      id: '/monitors/$monitorName'
+      path: '/monitors/$monitorName'
+      fullPath: '/monitors/$monitorName'
+      preLoaderRoute: typeof MonitorsMonitorNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IncidentsRoute: IncidentsRoute,
-  MonitorsRoute: MonitorsRoute,
+  MonitorsMonitorNameRoute: MonitorsMonitorNameRoute,
+  MonitorsIndexRoute: MonitorsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

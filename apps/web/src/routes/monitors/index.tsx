@@ -10,9 +10,16 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item";
 import { orpc } from "@/lib/orpc";
 
-export const Route = createFileRoute("/monitors")({
+export const Route = createFileRoute("/monitors/")({
   component: RouteComponent,
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(orpc.lastWeekLatencies.queryOptions()),
@@ -33,27 +40,32 @@ function RouteComponent() {
   return (
     <main className="space-y-6">
       <p className="text-muted-foreground">
-        <span className="font-semibold text-foreground">p95</span> latencies
+        <span className="font-semibold text-foreground">P95</span> latencies
         over the{" "}
         <span className="font-semibold text-foreground">last 7 days</span>.
       </p>
       {lastWeekLatencies.map(({ monitor, latencies }) => (
         <div className="space-y-2" key={monitor.name}>
-          <div className="flex justify-between gap-4">
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="font-semibold">{monitor.name}</p>
-              <p className="truncate text-muted-foreground text-sm">
-                <span className="font-semibold">[{monitor.method}]</span>{" "}
+          <Item className="p-0">
+            <ItemContent>
+              <ItemTitle className="text-base">{monitor.name}</ItemTitle>
+              <ItemDescription>
+                <span className="font-semibold">[{monitor.method}]</span>
                 {monitor.url}
-              </p>
-            </div>
-            <Button asChild variant="outline">
-              <Link to={"/"}>
-                Details
-                <ChevronRight />
-              </Link>
-            </Button>
-          </div>
+              </ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button asChild variant="ghost">
+                <Link
+                  params={{ monitorName: monitor.name }}
+                  to="/monitors/$monitorName"
+                >
+                  Details
+                  <ChevronRight />
+                </Link>
+              </Button>
+            </ItemActions>
+          </Item>
           <ChartContainer className="h-32 w-full" config={chartConfig}>
             <LineChart accessibilityLayer data={latencies}>
               <XAxis dataKey="date" hide />

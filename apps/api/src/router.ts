@@ -14,6 +14,8 @@ import {
   inArray,
   isNotNull,
   isNull,
+  lt,
+  max,
   sql,
 } from "drizzle-orm";
 import contract from "@/contract";
@@ -309,6 +311,192 @@ const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
   };
 });
 
+function calculatePercentageChange(current: number, previous: number) {
+  if (!previous || previous === 0) {
+    return 0;
+  }
+
+  return ((current - previous) / previous) * 100;
+}
+
+const monitorDetails = router.monitorDetails.handler(
+  async ({ input, errors }) => {
+    const found = monitorsArray.find((m) => m.name === input.monitorName);
+
+    if (!found) {
+      throw errors.NOT_FOUND();
+    }
+
+    const { validator: _, ...monitor } = found;
+
+    const currentFrom = subDays(new Date(), input.period);
+    const previousFrom = subDays(currentFrom, input.period);
+
+    const [currentStats] = await db
+      .select({
+        total: count(),
+        success:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+            Number
+          ),
+        fails:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+            Number
+          ),
+        lastTimestamp: max(pingResult.createdAt),
+        p50: sql`percentile_cont(0.50) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+        p99: sql`percentile_cont(0.99) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+      })
+      .from(pingResult)
+      .where(
+        and(
+          gte(pingResult.createdAt, currentFrom),
+          eq(pingResult.monitorName, input.monitorName)
+        )
+      );
+
+    if (!currentStats) {
+      throw errors.NOT_FOUND();
+    }
+
+    const currentUptime = (currentStats.success / currentStats.total) * 100;
+
+    const [previousStats] = await db
+      .select({
+        total: count(),
+        success:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+            Number
+          ),
+        fails:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+            Number
+          ),
+        p50: sql`percentile_cont(0.50) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+        p99: sql`percentile_cont(0.99) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+      })
+      .from(pingResult)
+      .where(
+        and(
+          gte(pingResult.createdAt, previousFrom),
+          lt(pingResult.createdAt, currentFrom),
+          eq(pingResult.monitorName, input.monitorName)
+        )
+      );
+
+    if (!previousStats) {
+      throw errors.NOT_FOUND();
+    }
+
+    const previousUptime = (previousStats.success / previousStats.total) * 100;
+
+    const pingResultsByHour = await db
+      .select({
+        date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
+          (v) => new Date(v).toISOString()
+        ),
+        success:
+          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+            Number
+          ),
+        fail: sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+          Number
+        ),
+      })
+      .from(pingResult)
+      .where(
+        and(
+          gte(pingResult.createdAt, currentFrom),
+          eq(pingResult.monitorName, input.monitorName)
+        )
+      )
+      .groupBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`)
+      .orderBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`);
+
+    const pingLatenciesByHour = await db
+      .select({
+        date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
+          (v) => new Date(v).toISOString()
+        ),
+        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+          (v) => Math.round(v)
+        ),
+      })
+      .from(pingResult)
+      .where(
+        and(
+          gte(pingResult.createdAt, currentFrom),
+          eq(pingResult.monitorName, input.monitorName)
+        )
+      )
+      .groupBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`)
+      .orderBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`);
+
+    return {
+      monitor,
+      pingResults: pingResultsByHour,
+      pingLatencies: pingLatenciesByHour,
+      stats: {
+        total: currentStats.total,
+        lastTimestamp: currentStats.lastTimestamp?.toISOString() ?? null,
+        uptime: {
+          value: currentUptime,
+          change: calculatePercentageChange(currentUptime, previousUptime),
+        },
+        success: {
+          value: currentStats.success,
+          change: calculatePercentageChange(
+            currentStats.success,
+            previousStats.success
+          ),
+        },
+        fails: {
+          value: currentStats.fails,
+          change: calculatePercentageChange(
+            currentStats.fails,
+            previousStats.fails
+          ),
+        },
+        p50: {
+          value: currentStats.p50,
+          change: calculatePercentageChange(
+            currentStats.p50,
+            previousStats.p50
+          ),
+        },
+        p95: {
+          value: currentStats.p95,
+          change: calculatePercentageChange(
+            currentStats.p95,
+            previousStats.p95
+          ),
+        },
+        p99: {
+          value: currentStats.p99,
+          change: calculatePercentageChange(
+            currentStats.p99,
+            previousStats.p99
+          ),
+        },
+      },
+    };
+  }
+);
+
 export default {
   health,
   monitors,
@@ -317,4 +505,5 @@ export default {
   lastWeekLatencies,
   incidents,
   statusBadge,
+  monitorDetails,
 };
