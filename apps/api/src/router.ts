@@ -531,14 +531,14 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
     "5xx": and(gte(pingResult.status, 500), lt(pingResult.status, 600)),
   };
 
-  const validationCheckConditions = {
+  const validationConditions = {
     success: eq(pingResult.success, true),
     fail: eq(pingResult.success, false),
   };
 
   const statusCondition = or(...input.status.map((s) => statusConditions[s]));
   const validationCheckCondition = or(
-    ...input.validationCheck.map((v) => validationCheckConditions[v])
+    ...input.validation.map((v) => validationConditions[v])
   );
 
   const pings = await db

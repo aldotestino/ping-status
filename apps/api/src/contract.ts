@@ -40,7 +40,7 @@ const requests = oc
     z.object({
       monitorName: z.array(z.string().trim().min(1)).default([]),
       status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
-      validationCheck: z.array(z.enum(["success", "fail"])).default([]),
+      validation: z.array(z.enum(["success", "fail"])).default([]),
       page: z.coerce.number().default(1),
       limit: z.coerce.number().default(10),
       sort: z
