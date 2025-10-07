@@ -44,7 +44,9 @@ function RequestsFilters() {
   return (
     <Accordion type="multiple">
       <AccordionItem className="border-none" value="status">
-        <AccordionTrigger className="p-2">Status</AccordionTrigger>
+        <AccordionTrigger className="py-2 text-muted-foreground hover:text-foreground hover:no-underline">
+          Status
+        </AccordionTrigger>
         <AccordionContent>
           <div className="divide-y rounded-md border">
             <div className="flex items-center gap-2 p-2">
@@ -81,7 +83,9 @@ function RequestsFilters() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem className="border-none" value="validation">
-        <AccordionTrigger className="p-2">Validation</AccordionTrigger>
+        <AccordionTrigger className="py-2 text-muted-foreground hover:text-foreground hover:no-underline">
+          Validation
+        </AccordionTrigger>
         <AccordionContent>
           <div className="divide-y rounded-md border">
             <div className="flex items-center gap-2 p-2">
@@ -108,7 +112,9 @@ function RequestsFilters() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem className="border-none" value="monitorName">
-        <AccordionTrigger className="p-2">Monitors</AccordionTrigger>
+        <AccordionTrigger className="py-2 text-muted-foreground hover:text-foreground hover:no-underline">
+          Monitors
+        </AccordionTrigger>
         <AccordionContent>
           <div className="divide-y rounded-md border">
             {monitors.map((m) => (
