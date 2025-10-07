@@ -1,5 +1,6 @@
 import { monitors } from "@ping-status/monitor";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -7,74 +8,95 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 
 function RequestsFilters() {
-  const { status, validation, monitorName } = useSearch({ from: "/requests" });
+  const search = useSearch({
+    from: "/requests",
+  });
 
   const navigate = useNavigate({ from: "/requests" });
 
-  const handleStatusChange = (checked: boolean, s: (typeof status)[number]) => {
+  const handleStatusChange = (
+    checked: boolean,
+    s: (typeof search.status)[number]
+  ) => {
     const newStatus = checked
-      ? [...new Set([...status, s])]
-      : status.filter((s1) => s1 !== s);
-    navigate({ search: { status: newStatus } });
+      ? [...new Set([...search.status, s])]
+      : search.status.filter((s1) => s1 !== s);
+    navigate({ search: { ...search, status: newStatus } });
   };
 
   const handleValidationChange = (
     checked: boolean,
-    v: (typeof validation)[number]
+    v: (typeof search.validation)[number]
   ) => {
     const newValidation = checked
-      ? [...new Set([...validation, v])]
-      : validation.filter((v1) => v1 !== v);
-    navigate({ search: { validation: newValidation } });
+      ? [...new Set([...search.validation, v])]
+      : search.validation.filter((v1) => v1 !== v);
+    navigate({ search: { ...search, validation: newValidation } });
   };
 
   const handleMonitorNameChange = (
     checked: boolean,
-    m: (typeof monitorName)[number]
+    m: (typeof search.monitorName)[number]
   ) => {
     const newMonitorName = checked
-      ? [...new Set([...monitorName, m])]
-      : monitorName.filter((m1) => m1 !== m);
-    navigate({ search: { monitorName: newMonitorName } });
+      ? [...new Set([...search.monitorName, m])]
+      : search.monitorName.filter((m1) => m1 !== m);
+    navigate({ search: { ...search, monitorName: newMonitorName } });
+  };
+
+  const handleIncidentIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      const n = Number(e.target.value);
+      navigate({
+        search: { ...search, incidentId: Number.isInteger(n) ? n : undefined },
+      });
+    } else {
+      navigate({ search: { ...search, incidentId: undefined } });
+    }
   };
 
   return (
     <Accordion type="multiple">
       <AccordionItem className="border-none" value="status">
-        <AccordionTrigger className="py-2 text-muted-foreground hover:text-foreground hover:no-underline">
+        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
           Status
         </AccordionTrigger>
-        <AccordionContent>
+        <AccordionContent className="p-2">
           <div className="divide-y rounded-md border">
             <div className="flex items-center gap-2 p-2">
               <Checkbox
-                checked={status.includes("2xx")}
+                checked={search.status.includes("2xx")}
                 id="2xx"
                 onCheckedChange={(checked) =>
-                  handleStatusChange(checked as boolean, "2xx")
+                  handleStatusChange(checked as boolean, "2xx" as const)
                 }
               />
               <Label htmlFor="2xx">2xx</Label>
             </div>
             <div className="flex items-center gap-2 p-2">
               <Checkbox
-                checked={status.includes("4xx")}
+                checked={search.status.includes("4xx")}
                 id="4xx"
                 onCheckedChange={(checked) =>
-                  handleStatusChange(checked as boolean, "4xx")
+                  handleStatusChange(checked as boolean, "4xx" as const)
                 }
               />
               <Label htmlFor="4xx">4xx</Label>
             </div>
             <div className="flex items-center gap-2 p-2">
               <Checkbox
-                checked={status.includes("5xx")}
+                checked={search.status.includes("5xx")}
                 id="5xx"
                 onCheckedChange={(checked) =>
-                  handleStatusChange(checked as boolean, "5xx")
+                  handleStatusChange(checked as boolean, "5xx" as const)
                 }
               />
               <Label htmlFor="5xx">5xx</Label>
@@ -83,14 +105,14 @@ function RequestsFilters() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem className="border-none" value="validation">
-        <AccordionTrigger className="py-2 text-muted-foreground hover:text-foreground hover:no-underline">
+        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
           Validation
         </AccordionTrigger>
-        <AccordionContent>
+        <AccordionContent className="p-2">
           <div className="divide-y rounded-md border">
             <div className="flex items-center gap-2 p-2">
               <Checkbox
-                checked={validation.includes("success")}
+                checked={search.validation.includes("success")}
                 id="success"
                 onCheckedChange={(checked) =>
                   handleValidationChange(checked as boolean, "success")
@@ -100,7 +122,7 @@ function RequestsFilters() {
             </div>
             <div className="flex items-center gap-2 p-2">
               <Checkbox
-                checked={validation.includes("fail")}
+                checked={search.validation.includes("fail")}
                 id="fail"
                 onCheckedChange={(checked) =>
                   handleValidationChange(checked as boolean, "fail")
@@ -112,15 +134,15 @@ function RequestsFilters() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem className="border-none" value="monitorName">
-        <AccordionTrigger className="py-2 text-muted-foreground hover:text-foreground hover:no-underline">
+        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
           Monitors
         </AccordionTrigger>
-        <AccordionContent>
+        <AccordionContent className="p-2">
           <div className="divide-y rounded-md border">
             {monitors.map((m) => (
               <div className="flex items-center gap-2 p-2" key={m.name}>
                 <Checkbox
-                  checked={monitorName.includes(m.name)}
+                  checked={search.monitorName.includes(m.name)}
                   id={m.name}
                   onCheckedChange={(checked) =>
                     handleMonitorNameChange(checked as boolean, m.name)
@@ -130,6 +152,23 @@ function RequestsFilters() {
               </div>
             ))}
           </div>
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem className="border-none" value="incidentId">
+        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
+          Incident ID
+        </AccordionTrigger>
+        <AccordionContent className="p-2">
+          <InputGroup>
+            <InputGroupInput
+              onChange={handleIncidentIdChange}
+              placeholder="Insert incident ID"
+              value={search.incidentId?.toString() || ""}
+            />
+            <InputGroupAddon>
+              <Search />
+            </InputGroupAddon>
+          </InputGroup>
         </AccordionContent>
       </AccordionItem>
     </Accordion>

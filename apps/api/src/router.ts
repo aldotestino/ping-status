@@ -242,30 +242,25 @@ const incidents = router.incidents.handler(({ input, errors }) => {
   const statusFilter =
     input.status.length === 1 && input.status[0] ? input.status[0] : "all";
 
-  return db.query.incident.findMany({
-    with: {
-      pingResults: {
-        columns: {
-          id: true,
-          createdAt: true,
-          message: true,
-        },
-      },
-    },
-    where: and(
-      input.monitorName
-        ? eq(incident.monitorName, input.monitorName)
-        : inArray(
-            incident.monitorName,
-            monitorsArray.map((m) => m.name)
-          ),
-      conditionByStatusFilter[statusFilter]
-    ),
-    limit: input.limit,
-    offset: (input.page - 1) * input.limit,
-    orderBy:
-      input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt),
-  });
+  return db
+    .select()
+    .from(incident)
+    .where(
+      and(
+        input.monitorName
+          ? eq(incident.monitorName, input.monitorName)
+          : inArray(
+              incident.monitorName,
+              monitorsArray.map((m) => m.name)
+            ),
+        conditionByStatusFilter[statusFilter]
+      )
+    )
+    .limit(input.limit)
+    .offset((input.page - 1) * input.limit)
+    .orderBy(
+      input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt)
+    );
 });
 
 const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
@@ -541,10 +536,21 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
     ...input.validation.map((v) => validationConditions[v])
   );
 
+  const incidentIdCondition = input.incidentId
+    ? eq(pingResult.incidentId, input.incidentId)
+    : undefined;
+
   const pings = await db
     .select()
     .from(pingResult)
-    .where(and(monitorNameCondition, statusCondition, validationCheckCondition))
+    .where(
+      and(
+        monitorNameCondition,
+        statusCondition,
+        validationCheckCondition,
+        incidentIdCondition
+      )
+    )
     .limit(input.limit)
     .offset((input.page - 1) * input.limit)
     .orderBy(sortBy[`${input.sort.field}.${input.sort.order}`]);

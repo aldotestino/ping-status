@@ -41,6 +41,7 @@ const requests = oc
       monitorName: z.array(z.string().trim().min(1)).default([]),
       status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
       validation: z.array(z.enum(["success", "fail"])).default([]),
+      incidentId: z.number().min(0).optional(),
       page: z.coerce.number().default(1),
       limit: z.coerce.number().default(10),
       sort: z
@@ -203,15 +204,7 @@ const incidents = oc
       order: z.enum(["asc", "desc"]).default("desc"),
     })
   )
-  .output(
-    z.array(
-      incidentSchema.extend({
-        pingResults: z.array(
-          pingResultSchema.pick({ message: true, createdAt: true, id: true })
-        ),
-      })
-    )
-  );
+  .output(z.array(incidentSchema));
 
 const statusBadge = oc
   .route({

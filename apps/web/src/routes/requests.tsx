@@ -30,6 +30,7 @@ export const Route = createFileRoute("/requests")({
     status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
     validation: z.array(z.enum(["success", "fail"])).default([]),
     page: z.coerce.number().min(1).default(1),
+    incidentId: z.coerce.number().min(0).optional(),
     sort: z
       .object({
         field: z.enum(["createdAt", "responseTime"]).default("createdAt"),
@@ -76,19 +77,19 @@ function RouteComponent() {
       field,
       order: search.sort.order === "asc" ? "desc" : ("asc" as "asc" | "desc"),
     };
-    navigate({ search: { sort: newSort } });
+    navigate({ search: { ...search, sort: newSort } });
   };
 
   return (
     <>
       <div className="grid h-screen grid-cols-[auto_1fr] overflow-hidden">
-        <div className="grid w-64 grid-rows-[auto_1fr_auto] overflow-hidden border-r">
-          <div className="flex items-center p-4">
+        <div className="grid w-72 grid-rows-[auto_1fr_auto] overflow-hidden border-r">
+          <div className="flex items-center p-2">
             <Link to="/">
               <h1 className="font-semibold text-lg">Ping Status</h1>
             </Link>
           </div>
-          <div className="overflow-y-auto p-4 pt-0">
+          <div className="overflow-y-auto pt-0">
             <RequestsFilters />
           </div>
         </div>
