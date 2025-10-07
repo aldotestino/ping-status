@@ -18,13 +18,13 @@ export const Route = createFileRoute("/_nav/")({
       <div className="grid h-12 grid-cols-[repeat(45,1fr)] gap-1">
         {Array.from({ length: 45 }).map((_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
-          (<Skeleton key={index} />)
+          <Skeleton key={index} />
         ))}
       </div>
       <div className="grid h-12 grid-cols-[repeat(45,1fr)] gap-1">
         {Array.from({ length: 45 }).map((_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
-          (<Skeleton key={index} />)
+          <Skeleton key={index} />
         ))}
       </div>
     </main>

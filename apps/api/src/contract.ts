@@ -53,11 +53,18 @@ const requests = oc
     })
   )
   .output(
-    z.array(
-      pingResultSchema.extend(
-        monitorSchema.pick({ url: true, method: true }).shape
-      )
-    )
+    z.object({
+      requests: z.array(
+        pingResultSchema.extend(
+          monitorSchema.pick({ url: true, method: true }).shape
+        )
+      ),
+      meta: z.object({
+        nextPage: z.number().optional(),
+        previousPage: z.number().optional(),
+        total: z.number(),
+      }),
+    })
   );
 
 const monitorDetails = oc
@@ -204,7 +211,16 @@ const incidents = oc
       order: z.enum(["asc", "desc"]).default("desc"),
     })
   )
-  .output(z.array(incidentSchema));
+  .output(
+    z.object({
+      incidents: z.array(incidentSchema),
+      meta: z.object({
+        nextPage: z.number().optional(),
+        previousPage: z.number().optional(),
+        total: z.number(),
+      }),
+    })
+  );
 
 const statusBadge = oc
   .route({

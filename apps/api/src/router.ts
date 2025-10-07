@@ -225,7 +225,7 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
   }));
 });
 
-const incidents = router.incidents.handler(({ input, errors }) => {
+const incidents = router.incidents.handler(async ({ input, errors }) => {
   const conditionByStatusFilter = {
     all: undefined,
     open: isNull(incident.closedAt),
@@ -242,25 +242,43 @@ const incidents = router.incidents.handler(({ input, errors }) => {
   const statusFilter =
     input.status.length === 1 && input.status[0] ? input.status[0] : "all";
 
-  return db
+  const where = and(
+    input.monitorName
+      ? eq(incident.monitorName, input.monitorName)
+      : inArray(
+          incident.monitorName,
+          monitorsArray.map((m) => m.name)
+        ),
+    conditionByStatusFilter[statusFilter]
+  );
+
+  const [t] = await db
+    .select({
+      count: count(),
+    })
+    .from(incident)
+    .where(where);
+
+  const total = t?.count ?? 0;
+
+  const foundIncidents = await db
     .select()
     .from(incident)
-    .where(
-      and(
-        input.monitorName
-          ? eq(incident.monitorName, input.monitorName)
-          : inArray(
-              incident.monitorName,
-              monitorsArray.map((m) => m.name)
-            ),
-        conditionByStatusFilter[statusFilter]
-      )
-    )
+    .where(where)
     .limit(input.limit)
     .offset((input.page - 1) * input.limit)
     .orderBy(
       input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt)
     );
+
+  return {
+    incidents: foundIncidents,
+    meta: {
+      nextPage: total > input.page * input.limit ? input.page + 1 : undefined,
+      previousPage: input.page - 1 > 0 ? input.page - 1 : undefined,
+      total,
+    },
+  };
 });
 
 const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
@@ -540,17 +558,26 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
     ? eq(pingResult.incidentId, input.incidentId)
     : undefined;
 
+  const where = and(
+    monitorNameCondition,
+    statusCondition,
+    validationCheckCondition,
+    incidentIdCondition
+  );
+
+  const [t] = await db
+    .select({
+      count: count(),
+    })
+    .from(pingResult)
+    .where(where);
+  
+    const total = t?.count ?? 0;
+
   const pings = await db
     .select()
     .from(pingResult)
-    .where(
-      and(
-        monitorNameCondition,
-        statusCondition,
-        validationCheckCondition,
-        incidentIdCondition
-      )
-    )
+    .where(where)
     .limit(input.limit)
     .offset((input.page - 1) * input.limit)
     .orderBy(sortBy[`${input.sort.field}.${input.sort.order}`]);
@@ -567,7 +594,7 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
     {} as Record<string, Pick<Monitor, "url" | "method">>
   );
 
-  return pings.map((ping) => {
+  const formattedRequests = pings.map((ping) => {
     const m = monitorByName[ping.monitorName];
 
     if (!m) {
@@ -579,6 +606,15 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
       ...m,
     };
   });
+
+  return {
+    requests: formattedRequests,
+    meta: {
+      nextPage: total > input.page * input.limit ? input.page + 1 : undefined,
+      previousPage: input.page - 1 > 0 ? input.page - 1 : undefined,
+      total,
+    },
+  };
 });
 
 export default {

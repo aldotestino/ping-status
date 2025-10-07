@@ -104,7 +104,7 @@ function RequestDetails({ request }: RequestDetailsProps) {
               </RequestDetailsItem>
               <RequestDetailsItem label="Message" orientation="vertical">
                 <Item
-                  className="bg-monitor-status-down/20 text-monitor-status-down"
+                  className="w-full bg-monitor-status-down/20 text-monitor-status-down"
                   variant="muted"
                 >
                   <ItemContent className="break-all">
