@@ -7,9 +7,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { client } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type RequestDetailsProps = {
   request:
@@ -33,14 +37,12 @@ function RequestDetailsItem({
       })}
     >
       <p className="text-muted-foreground">{label}</p>
-      {typeof children === "string" && (label.length + children.length) > 40 ? (
+      {typeof children === "string" && label.length + children.length > 40 ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="min-w-0 truncate">{children}</div>
           </TooltipTrigger>
-          <TooltipContent>
-            {children}
-          </TooltipContent>
+          <TooltipContent>{children}</TooltipContent>
         </Tooltip>
       ) : (
         children
