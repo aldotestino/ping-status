@@ -8,11 +8,13 @@ import { Console, Duration, Effect, Schedule } from "effect";
 import { DrizzleWrapper } from "@/services/drizzle-wrapper";
 import { MonitorPinger } from "@/services/monitor-pinger";
 import { MonitorProcessor } from "@/services/monitor-processor";
+import { Notifier } from "@/services/notifier";
 import { getIncidentOperations, linkPingsWithIncidents } from "@/utils";
 
 const program = Effect.gen(function* () {
   const monitorProcessor = yield* MonitorProcessor;
   const drizzle = yield* DrizzleWrapper;
+  const notifier = yield* Notifier;
 
   const pings = yield* Effect.all(monitors.map(monitorProcessor.process), {
     concurrency: env.MONITOR_CONCURRENCY,
@@ -41,6 +43,19 @@ const program = Effect.gen(function* () {
     yield* Console.log(`opened ${openedIncidents.length} incidents`);
 
     // send notification
+    notifier.notifyOpenIncidents(
+      openedIncidents.map((i) => {
+        // biome-ignore lint/style/noNonNullAssertion: is there 100%
+        const ping = pings.find((p) => p.monitorName === i.monitorName)!;
+
+        return {
+          ...i,
+          message: ping.message,
+          status: ping.status,
+          responseTime: ping.responseTime,
+        };
+      })
+    );
   }
 
   // close incidents
@@ -52,11 +67,13 @@ const program = Effect.gen(function* () {
         .where(
           and(inArray(incident.id, incidentsToClose), isNull(incident.closedAt))
         )
+        .returning()
     );
 
-    yield* Console.log(`closed ${closed.rowCount} incidents`);
+    yield* Console.log(`closed ${closed.length} incidents`);
 
     // send notification
+    notifier.notifyClosedIncidents(closed);
   }
 
   const newCurrentOpenIncidents = currentOpenIncidents
@@ -78,6 +95,7 @@ const program = Effect.gen(function* () {
 
 // do not catch database errors as they represent defects
 const main = program.pipe(
+  Effect.provide(Notifier.Default),
   Effect.provide(DrizzleWrapper.Default),
   Effect.provide(MonitorProcessor.Default),
   Effect.provide(MonitorPinger.Default),
