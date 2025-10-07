@@ -5,7 +5,7 @@ import MonitorsOverview from "@/components/monitors-overview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/lib/orpc";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_nav/")({
   component: App,
   loader: ({ context: { queryClient } }) =>
     Promise.all([
@@ -36,7 +36,7 @@ function App() {
   const { data: status } = useSuspenseQuery(orpc.overview.queryOptions());
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto max-w-screen-lg space-y-6 px-4 py-10 md:px-6">
       <MonitorsOverview {...status} />
       {history.map((monitor) => (
         <MonitorHistory key={monitor.monitorName} {...monitor} />

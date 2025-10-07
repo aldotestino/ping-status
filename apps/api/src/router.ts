@@ -1,7 +1,7 @@
-import { implement } from "@orpc/server";
+import { implement, ORPCError } from "@orpc/server";
 import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
-import { monitors as monitorsArray } from "@ping-status/monitor";
+import { type Monitor, monitors as monitorsArray } from "@ping-status/monitor";
 import { makeBadge } from "badge-maker";
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import {
@@ -16,6 +16,7 @@ import {
   isNull,
   lt,
   max,
+  or,
   sql,
 } from "drizzle-orm";
 import contract from "@/contract";
@@ -224,7 +225,7 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
   }));
 });
 
-const incidents = router.incidents.handler(({ input, errors }) => {
+const incidents = router.incidents.handler(async ({ input, errors }) => {
   const conditionByStatusFilter = {
     all: undefined,
     open: isNull(incident.closedAt),
@@ -241,30 +242,43 @@ const incidents = router.incidents.handler(({ input, errors }) => {
   const statusFilter =
     input.status.length === 1 && input.status[0] ? input.status[0] : "all";
 
-  return db.query.incident.findMany({
-    with: {
-      pingResults: {
-        columns: {
-          id: true,
-          createdAt: true,
-          message: true,
-        },
-      },
+  const where = and(
+    input.monitorName
+      ? eq(incident.monitorName, input.monitorName)
+      : inArray(
+          incident.monitorName,
+          monitorsArray.map((m) => m.name)
+        ),
+    conditionByStatusFilter[statusFilter]
+  );
+
+  const [t] = await db
+    .select({
+      count: count(),
+    })
+    .from(incident)
+    .where(where);
+
+  const total = t?.count ?? 0;
+
+  const foundIncidents = await db
+    .select()
+    .from(incident)
+    .where(where)
+    .limit(input.limit)
+    .offset((input.page - 1) * input.limit)
+    .orderBy(
+      input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt)
+    );
+
+  return {
+    incidents: foundIncidents,
+    meta: {
+      nextPage: total > input.page * input.limit ? input.page + 1 : undefined,
+      previousPage: input.page - 1 > 0 ? input.page - 1 : undefined,
+      total,
     },
-    where: and(
-      input.monitorName
-        ? eq(incident.monitorName, input.monitorName)
-        : inArray(
-            incident.monitorName,
-            monitorsArray.map((m) => m.name)
-          ),
-      conditionByStatusFilter[statusFilter]
-    ),
-    limit: input.limit,
-    offset: (input.page - 1) * input.limit,
-    orderBy:
-      input.order === "asc" ? asc(incident.openedAt) : desc(incident.openedAt),
-  });
+  };
 });
 
 const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
@@ -502,6 +516,107 @@ const monitorDetails = router.monitorDetails.handler(
   }
 );
 
+export const requests = router.requests.handler(async ({ input, errors }) => {
+  const sortBy = {
+    "createdAt.asc": asc(pingResult.createdAt),
+    "createdAt.desc": desc(pingResult.createdAt),
+    "responseTime.asc": asc(pingResult.responseTime),
+    "responseTime.desc": desc(pingResult.responseTime),
+  };
+
+  const monitorNames = monitorsArray.map((m) => m.name);
+
+  if (
+    input.monitorName.length > 0 &&
+    input.monitorName.some((m1) => !monitorNames.includes(m1))
+  ) {
+    throw errors.NOT_FOUND();
+  }
+
+  const monitorNameCondition =
+    input.monitorName.length > 0
+      ? inArray(pingResult.monitorName, input.monitorName)
+      : inArray(pingResult.monitorName, monitorNames);
+
+  const statusConditions = {
+    "2xx": and(gte(pingResult.status, 200), lt(pingResult.status, 300)),
+    "4xx": and(gte(pingResult.status, 400), lt(pingResult.status, 500)),
+    "5xx": and(gte(pingResult.status, 500), lt(pingResult.status, 600)),
+  };
+
+  const validationConditions = {
+    success: eq(pingResult.success, true),
+    fail: eq(pingResult.success, false),
+  };
+
+  const statusCondition = or(...input.status.map((s) => statusConditions[s]));
+  const validationCheckCondition = or(
+    ...input.validation.map((v) => validationConditions[v])
+  );
+
+  const incidentIdCondition = input.incidentId
+    ? eq(pingResult.incidentId, input.incidentId)
+    : undefined;
+
+  const where = and(
+    monitorNameCondition,
+    statusCondition,
+    validationCheckCondition,
+    incidentIdCondition
+  );
+
+  const [t] = await db
+    .select({
+      count: count(),
+    })
+    .from(pingResult)
+    .where(where);
+
+  const total = t?.count ?? 0;
+
+  const pings = await db
+    .select()
+    .from(pingResult)
+    .where(where)
+    .limit(input.limit)
+    .offset((input.page - 1) * input.limit)
+    .orderBy(sortBy[`${input.sort.field}.${input.sort.order}`]);
+
+  const monitorByName = monitorsArray.reduce(
+    (acc, m) => {
+      acc[m.name] = {
+        url: m.url,
+        method: m.method,
+      };
+
+      return acc;
+    },
+    {} as Record<string, Pick<Monitor, "url" | "method">>
+  );
+
+  const formattedRequests = pings.map((ping) => {
+    const m = monitorByName[ping.monitorName];
+
+    if (!m) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR");
+    }
+
+    return {
+      ...ping,
+      ...m,
+    };
+  });
+
+  return {
+    requests: formattedRequests,
+    meta: {
+      nextPage: total > input.page * input.limit ? input.page + 1 : undefined,
+      previousPage: input.page - 1 > 0 ? input.page - 1 : undefined,
+      total,
+    },
+  };
+});
+
 export default {
   health,
   monitors,
@@ -511,4 +626,5 @@ export default {
   incidents,
   statusBadge,
   monitorDetails,
+  requests,
 };

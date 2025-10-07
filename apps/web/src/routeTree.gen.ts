@@ -9,104 +9,159 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IncidentsRouteImport } from './routes/incidents'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as MonitorsIndexRouteImport } from './routes/monitors/index'
-import { Route as MonitorsMonitorNameRouteImport } from './routes/monitors/$monitorName'
+import { Route as RequestsRouteImport } from './routes/requests'
+import { Route as NavRouteRouteImport } from './routes/_nav/route'
+import { Route as NavIndexRouteImport } from './routes/_nav/index'
+import { Route as NavIncidentsRouteImport } from './routes/_nav/incidents'
+import { Route as NavMonitorsIndexRouteImport } from './routes/_nav/monitors/index'
+import { Route as NavMonitorsMonitorNameRouteImport } from './routes/_nav/monitors/$monitorName'
 
-const IncidentsRoute = IncidentsRouteImport.update({
-  id: '/incidents',
-  path: '/incidents',
+const RequestsRoute = RequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const NavRouteRoute = NavRouteRouteImport.update({
+  id: '/_nav',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NavIndexRoute = NavIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => NavRouteRoute,
 } as any)
-const MonitorsIndexRoute = MonitorsIndexRouteImport.update({
+const NavIncidentsRoute = NavIncidentsRouteImport.update({
+  id: '/incidents',
+  path: '/incidents',
+  getParentRoute: () => NavRouteRoute,
+} as any)
+const NavMonitorsIndexRoute = NavMonitorsIndexRouteImport.update({
   id: '/monitors/',
   path: '/monitors/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => NavRouteRoute,
 } as any)
-const MonitorsMonitorNameRoute = MonitorsMonitorNameRouteImport.update({
+const NavMonitorsMonitorNameRoute = NavMonitorsMonitorNameRouteImport.update({
   id: '/monitors/$monitorName',
   path: '/monitors/$monitorName',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => NavRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/incidents': typeof IncidentsRoute
-  '/monitors/$monitorName': typeof MonitorsMonitorNameRoute
-  '/monitors': typeof MonitorsIndexRoute
+  '/requests': typeof RequestsRoute
+  '/incidents': typeof NavIncidentsRoute
+  '/': typeof NavIndexRoute
+  '/monitors/$monitorName': typeof NavMonitorsMonitorNameRoute
+  '/monitors': typeof NavMonitorsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/incidents': typeof IncidentsRoute
-  '/monitors/$monitorName': typeof MonitorsMonitorNameRoute
-  '/monitors': typeof MonitorsIndexRoute
+  '/requests': typeof RequestsRoute
+  '/incidents': typeof NavIncidentsRoute
+  '/': typeof NavIndexRoute
+  '/monitors/$monitorName': typeof NavMonitorsMonitorNameRoute
+  '/monitors': typeof NavMonitorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/incidents': typeof IncidentsRoute
-  '/monitors/$monitorName': typeof MonitorsMonitorNameRoute
-  '/monitors/': typeof MonitorsIndexRoute
+  '/_nav': typeof NavRouteRouteWithChildren
+  '/requests': typeof RequestsRoute
+  '/_nav/incidents': typeof NavIncidentsRoute
+  '/_nav/': typeof NavIndexRoute
+  '/_nav/monitors/$monitorName': typeof NavMonitorsMonitorNameRoute
+  '/_nav/monitors/': typeof NavMonitorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/incidents' | '/monitors/$monitorName' | '/monitors'
+  fullPaths:
+    | '/requests'
+    | '/incidents'
+    | '/'
+    | '/monitors/$monitorName'
+    | '/monitors'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/incidents' | '/monitors/$monitorName' | '/monitors'
-  id: '__root__' | '/' | '/incidents' | '/monitors/$monitorName' | '/monitors/'
+  to: '/requests' | '/incidents' | '/' | '/monitors/$monitorName' | '/monitors'
+  id:
+    | '__root__'
+    | '/_nav'
+    | '/requests'
+    | '/_nav/incidents'
+    | '/_nav/'
+    | '/_nav/monitors/$monitorName'
+    | '/_nav/monitors/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  IncidentsRoute: typeof IncidentsRoute
-  MonitorsMonitorNameRoute: typeof MonitorsMonitorNameRoute
-  MonitorsIndexRoute: typeof MonitorsIndexRoute
+  NavRouteRoute: typeof NavRouteRouteWithChildren
+  RequestsRoute: typeof RequestsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/incidents': {
-      id: '/incidents'
-      path: '/incidents'
-      fullPath: '/incidents'
-      preLoaderRoute: typeof IncidentsRouteImport
+    '/requests': {
+      id: '/requests'
+      path: '/requests'
+      fullPath: '/requests'
+      preLoaderRoute: typeof RequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_nav': {
+      id: '/_nav'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof NavRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_nav/': {
+      id: '/_nav/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof NavIndexRouteImport
+      parentRoute: typeof NavRouteRoute
     }
-    '/monitors/': {
-      id: '/monitors/'
+    '/_nav/incidents': {
+      id: '/_nav/incidents'
+      path: '/incidents'
+      fullPath: '/incidents'
+      preLoaderRoute: typeof NavIncidentsRouteImport
+      parentRoute: typeof NavRouteRoute
+    }
+    '/_nav/monitors/': {
+      id: '/_nav/monitors/'
       path: '/monitors'
       fullPath: '/monitors'
-      preLoaderRoute: typeof MonitorsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof NavMonitorsIndexRouteImport
+      parentRoute: typeof NavRouteRoute
     }
-    '/monitors/$monitorName': {
-      id: '/monitors/$monitorName'
+    '/_nav/monitors/$monitorName': {
+      id: '/_nav/monitors/$monitorName'
       path: '/monitors/$monitorName'
       fullPath: '/monitors/$monitorName'
-      preLoaderRoute: typeof MonitorsMonitorNameRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof NavMonitorsMonitorNameRouteImport
+      parentRoute: typeof NavRouteRoute
     }
   }
 }
 
+interface NavRouteRouteChildren {
+  NavIncidentsRoute: typeof NavIncidentsRoute
+  NavIndexRoute: typeof NavIndexRoute
+  NavMonitorsMonitorNameRoute: typeof NavMonitorsMonitorNameRoute
+  NavMonitorsIndexRoute: typeof NavMonitorsIndexRoute
+}
+
+const NavRouteRouteChildren: NavRouteRouteChildren = {
+  NavIncidentsRoute: NavIncidentsRoute,
+  NavIndexRoute: NavIndexRoute,
+  NavMonitorsMonitorNameRoute: NavMonitorsMonitorNameRoute,
+  NavMonitorsIndexRoute: NavMonitorsIndexRoute,
+}
+
+const NavRouteRouteWithChildren = NavRouteRoute._addFileChildren(
+  NavRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  IncidentsRoute: IncidentsRoute,
-  MonitorsMonitorNameRoute: MonitorsMonitorNameRoute,
-  MonitorsIndexRoute: MonitorsIndexRoute,
+  NavRouteRoute: NavRouteRouteWithChildren,
+  RequestsRoute: RequestsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

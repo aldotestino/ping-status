@@ -25,6 +25,48 @@ const monitors = oc
   })
   .output(z.array(monitorSchema.omit({ validator: true })));
 
+const requests = oc
+  .route({
+    tags: ["monitor"],
+    method: "POST",
+    path: "/requests",
+  })
+  .errors({
+    NOT_FOUND: {
+      message: "Monitor not found",
+    },
+  })
+  .input(
+    z.object({
+      monitorName: z.array(z.string().trim().min(1)).default([]),
+      status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
+      validation: z.array(z.enum(["success", "fail"])).default([]),
+      incidentId: z.number().min(0).optional(),
+      page: z.coerce.number().default(1),
+      limit: z.coerce.number().default(10),
+      sort: z
+        .object({
+          field: z.enum(["createdAt", "responseTime"]).default("createdAt"),
+          order: z.enum(["asc", "desc"]).default("desc"),
+        })
+        .default({ field: "createdAt", order: "desc" }),
+    })
+  )
+  .output(
+    z.object({
+      requests: z.array(
+        pingResultSchema.extend(
+          monitorSchema.pick({ url: true, method: true }).shape
+        )
+      ),
+      meta: z.object({
+        nextPage: z.number().optional(),
+        previousPage: z.number().optional(),
+        total: z.number(),
+      }),
+    })
+  );
+
 const monitorDetails = oc
   .route({
     tags: ["monitor"],
@@ -170,13 +212,14 @@ const incidents = oc
     })
   )
   .output(
-    z.array(
-      incidentSchema.extend({
-        pingResults: z.array(
-          pingResultSchema.pick({ message: true, createdAt: true, id: true })
-        ),
-      })
-    )
+    z.object({
+      incidents: z.array(incidentSchema),
+      meta: z.object({
+        nextPage: z.number().optional(),
+        previousPage: z.number().optional(),
+        total: z.number(),
+      }),
+    })
   );
 
 const statusBadge = oc
@@ -214,4 +257,5 @@ export default {
   incidents,
   statusBadge,
   monitorDetails,
+  requests,
 };

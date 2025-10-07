@@ -21,7 +21,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/lib/orpc";
 
-export const Route = createFileRoute("/incidents")({
+export const Route = createFileRoute("/_nav/incidents")({
   validateSearch: z.object({
     status: z
       .array(z.enum(["open", "closed"]))
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/incidents")({
     queryClient.ensureQueryData(orpc.incidents.queryOptions({ input: deps })),
   component: RouteComponent,
   pendingComponent: () => (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-screen-lg space-y-4 px-4 py-10 md:px-6">
       {Array.from({ length: 3 }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: skeleton
         <Skeleton className="h-40" key={index} />
@@ -54,12 +54,12 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const { status } = Route.useSearch();
 
-  const { data: incidents } = useSuspenseQuery(
-    orpc.incidents.queryOptions({ input: { status } })
-  );
+  const {
+    data: { incidents },
+  } = useSuspenseQuery(orpc.incidents.queryOptions({ input: { status } }));
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto max-w-screen-lg space-y-6 px-4 py-10 md:px-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Last 10</span>
