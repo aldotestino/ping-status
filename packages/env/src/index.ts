@@ -17,6 +17,7 @@ const envSchema = z.object({
     .max(20_000)
     .default(10_000),
   MONITOR_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(5),
+  SLACK_WEBHOOK_URL: z.url(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -28,4 +29,5 @@ export const env = envSchema.parse({
   MONITOR_RETRY_DELAY_MS: process.env.MONITOR_RETRY_DELAY_MS,
   MONITOR_TIMEOUT_MS: process.env.MONITOR_TIMEOUT_MS,
   MONITOR_CONCURRENCY: process.env.MONITOR_CONCURRENCY,
+  SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
 });

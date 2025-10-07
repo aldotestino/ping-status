@@ -19,7 +19,9 @@
     "@ping-status/db": "workspace:*",
     "@ping-status/env": "workspace:*",
     "@ping-status/monitor": "workspace:*",
+    "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.5",
-    "effect": "^3.18.1"
+    "effect": "^3.18.1",
+    "table": "^6.9.0"
   }
 }
