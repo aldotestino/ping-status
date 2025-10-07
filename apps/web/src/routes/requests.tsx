@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import {
   createFileRoute,
   Link,
@@ -20,16 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { orpc } from "@/lib/orpc";
+import { client, orpc } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/requests")({
   validateSearch: z.object({
-    limit: z.coerce.number().min(1).max(100).default(100),
     monitorName: z.array(z.string().trim().min(1)).default([]),
     status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
     validation: z.array(z.enum(["success", "fail"])).default([]),
-    page: z.coerce.number().min(1).default(1),
     incidentId: z.coerce.number().min(0).optional(),
     sort: z
       .object({
@@ -41,11 +39,9 @@ export const Route = createFileRoute("/requests")({
   search: {
     middlewares: [
       stripSearchParams({
-        limit: 100,
         monitorName: [],
         status: [],
         validation: [],
-        page: 1,
         sort: {
           field: "createdAt",
           order: "desc",
@@ -55,22 +51,36 @@ export const Route = createFileRoute("/requests")({
   },
   loaderDeps: ({ search }) => search,
   loader: ({ context: { queryClient }, deps }) =>
-    queryClient.ensureQueryData(orpc.requests.queryOptions({ input: deps })),
+    queryClient.ensureInfiniteQueryData(orpc.requests.infiniteOptions({
+      initialPageParam: 1,
+      getNextPageParam: (last) => last.meta.nextPage,
+      getPreviousPageParam: (last) => last.meta.previousPage,
+      input: (pageParam) => ({
+        ...deps,
+        limit: 100,
+        page: pageParam,
+      })
+    })),
   component: RouteComponent,
 });
 
 function RouteComponent() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { data: requests } = useSuspenseQuery(
-    orpc.requests.queryOptions({
-      input: search,
+  const { data, hasNextPage, fetchNextPage, isFetchingNextPage } = useSuspenseInfiniteQuery(
+    orpc.requests.infiniteOptions({
+      input: (pageParam) => ({
+        ...search,
+        limit: 100,
+        page: pageParam,
+      }),
+      initialPageParam: 1,
+      getNextPageParam: (last) => last.meta.nextPage,
+      getPreviousPageParam: (last) => last.meta.previousPage,
     })
   );
 
-  const [selectedRequest, setSelectedRequest] = useState<
-    (typeof requests)[number] | null
-  >(null);
+  const [selectedRequest, setSelectedRequest] = useState<Awaited<ReturnType<typeof client.requests>>["requests"][number] | null>(null);
 
   const handleSort = (field: "createdAt" | "responseTime") => {
     const newSort = {
@@ -125,7 +135,7 @@ function RouteComponent() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {requests.map((request) => {
+            {data.pages.flatMap((page) => page.requests).map((request) => {
               const url = new URL(request.url);
               return (
                 <TableRow
@@ -195,6 +205,8 @@ function RouteComponent() {
                 </TableRow>
               );
             })}
+            {hasNextPage && <TableRow><TableCell colSpan={8} className="text-center cursor-pointer" onClick={() => fetchNextPage()}>{
+              isFetchingNextPage ? "Loading more..." : "Load more..."}</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

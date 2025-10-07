@@ -54,7 +54,7 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const { status } = Route.useSearch();
 
-  const { data: incidents } = useSuspenseQuery(
+  const { data: { incidents } } = useSuspenseQuery(
     orpc.incidents.queryOptions({ input: { status } })
   );
 
