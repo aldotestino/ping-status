@@ -66,10 +66,10 @@ function RequestsFilters() {
   return (
     <Accordion type="multiple">
       <AccordionItem className="border-none" value="status">
-        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
+        <AccordionTrigger className="p-2 px-4 text-muted-foreground hover:text-foreground hover:no-underline">
           Status
         </AccordionTrigger>
-        <AccordionContent className="p-2">
+        <AccordionContent className="px-4">
           <div className="divide-y rounded-md border">
             <div className="flex items-center gap-2 p-2">
               <Checkbox
@@ -105,10 +105,10 @@ function RequestsFilters() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem className="border-none" value="validation">
-        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
+        <AccordionTrigger className="p-2 px-4 text-muted-foreground hover:text-foreground hover:no-underline">
           Validation
         </AccordionTrigger>
-        <AccordionContent className="p-2">
+        <AccordionContent className="px-4">
           <div className="divide-y rounded-md border">
             <div className="flex items-center gap-2 p-2">
               <Checkbox
@@ -134,10 +134,10 @@ function RequestsFilters() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem className="border-none" value="monitorName">
-        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
+        <AccordionTrigger className="p-2 px-4 text-muted-foreground hover:text-foreground hover:no-underline">
           Monitors
         </AccordionTrigger>
-        <AccordionContent className="p-2">
+        <AccordionContent className="px-4">
           <div className="divide-y rounded-md border">
             {monitors.map((m) => (
               <div className="flex items-center gap-2 p-2" key={m.name}>
@@ -155,10 +155,10 @@ function RequestsFilters() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem className="border-none" value="incidentId">
-        <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
+        <AccordionTrigger className="p-2 px-4 text-muted-foreground hover:text-foreground hover:no-underline">
           Incident ID
         </AccordionTrigger>
-        <AccordionContent className="p-2">
+        <AccordionContent className="px-4">
           <InputGroup>
             <InputGroupInput
               onChange={handleIncidentIdChange}

@@ -1,8 +1,8 @@
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { client } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 
 function RequestRow({
   request,
@@ -17,7 +17,7 @@ function RequestRow({
   return (
     <TableRow
       className={cn(
-        "cursor-pointer data-[selected=true]:bg-muted data-[selected=true]:ring",
+        "cursor-pointer divide-x data-[selected=true]:bg-muted data-[selected=true]:ring",
         {
           "bg-monitor-status-degraded/10 hover:bg-monitor-status-degraded/20 data-[selected=true]:bg-monitor-status-degraded/20 data-[selected=true]:ring-monitor-status-degraded":
             request.status >= 400 && request.status < 500,
