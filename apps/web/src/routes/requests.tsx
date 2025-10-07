@@ -60,6 +60,7 @@ export const Route = createFileRoute("/requests")({
 
 function RouteComponent() {
   const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const { data: requests } = useSuspenseQuery(
     orpc.requests.queryOptions({
       input: search,
@@ -69,6 +70,14 @@ function RouteComponent() {
   const [selectedRequest, setSelectedRequest] = useState<
     (typeof requests)[number] | null
   >(null);
+
+  const handleSort = (field: "createdAt" | "responseTime") => {
+    const newSort = {
+      field,
+      order: search.sort.order === "asc" ? "desc" : ("asc" as "asc" | "desc"),
+    };
+    navigate({ search: { sort: newSort } });
+  };
 
   return (
     <>
@@ -87,7 +96,10 @@ function RouteComponent() {
           <TableHeader>
             <TableRow className="sticky top-0 bg-muted hover:bg-muted">
               <TableHead className="text-muted-foreground">Monitor</TableHead>
-              <TableHead className="cursor-pointer text-muted-foreground hover:text-foreground">
+              <TableHead
+                className="cursor-pointer text-muted-foreground hover:text-foreground"
+                onClick={() => handleSort("createdAt")}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="">Date</span>
                   <ChevronsUpDown className="size-4" />
@@ -97,7 +109,10 @@ function RouteComponent() {
               <TableHead className="text-muted-foreground">Method</TableHead>
               <TableHead className="text-muted-foreground">Host</TableHead>
               <TableHead className="text-muted-foreground">Pathname</TableHead>
-              <TableHead className="cursor-pointer text-muted-foreground hover:text-foreground">
+              <TableHead
+                className="cursor-pointer text-muted-foreground hover:text-foreground"
+                onClick={() => handleSort("responseTime")}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span>Response Time</span>
                   <ChevronsUpDown className="size-4" />
