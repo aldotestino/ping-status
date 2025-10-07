@@ -54,9 +54,9 @@ function RouteComponent() {
   const navigate = Route.useNavigate();
   const { status } = Route.useSearch();
 
-  const { data: { incidents } } = useSuspenseQuery(
-    orpc.incidents.queryOptions({ input: { status } })
-  );
+  const {
+    data: { incidents },
+  } = useSuspenseQuery(orpc.incidents.queryOptions({ input: { status } }));
 
   return (
     <main className="mx-auto max-w-screen-lg space-y-6 px-4 py-10 md:px-6">

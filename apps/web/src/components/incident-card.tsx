@@ -15,7 +15,9 @@ import { Separator } from "@/components/ui/separator";
 import type { client } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
 
-type IncidentCardProps = Awaited<ReturnType<typeof client.incidents>>["incidents"][number];
+type IncidentCardProps = Awaited<
+  ReturnType<typeof client.incidents>
+>["incidents"][number];
 
 export function IncidentCard(incident: IncidentCardProps) {
   return (

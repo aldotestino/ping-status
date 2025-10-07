@@ -571,8 +571,8 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
     })
     .from(pingResult)
     .where(where);
-  
-    const total = t?.count ?? 0;
+
+  const total = t?.count ?? 0;
 
   const pings = await db
     .select()

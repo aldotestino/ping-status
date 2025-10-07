@@ -9,9 +9,12 @@ import {
 } from "@/components/ui/sheet";
 import type { client } from "@/lib/orpc";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type RequestDetailsProps = {
-  request: Awaited<ReturnType<typeof client.requests>>[number] | null;
+  request:
+    | Awaited<ReturnType<typeof client.requests>>["requests"][number]
+    | null;
 };
 
 function RequestDetailsItem({
@@ -25,12 +28,23 @@ function RequestDetailsItem({
 }) {
   return (
     <div
-      className={cn("flex items-center justify-between gap-2 py-2 text-sm", {
+      className={cn("flex items-center justify-between gap-4 py-2 text-sm", {
         "flex-col items-start": orientation === "vertical",
       })}
     >
       <p className="text-muted-foreground">{label}</p>
-      {children}
+      {typeof children === "string" && (label.length + children.length) > 40 ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="min-w-0 truncate">{children}</div>
+          </TooltipTrigger>
+          <TooltipContent>
+            {children}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        children
+      )}
     </div>
   );
 }
