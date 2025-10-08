@@ -232,7 +232,9 @@ function RouteComponent() {
             <YAxis
               axisLine={false}
               orientation="right"
-              tickFormatter={(value) => `${value}ms`}
+              tickFormatter={(value) =>
+                value > 1000 ? `${value / 1000}s` : `${value}ms`
+              }
               tickLine={false}
             />
             <CartesianGrid vertical={false} />
@@ -241,8 +243,15 @@ function RouteComponent() {
                 <ChartTooltipContent
                   indicator="line"
                   labelFormatter={(date) => format(date, "MMM d, HH:mm")}
+                  valueFormatter={(value) => (
+                    <div className="space-x-0.5">
+                      <span>{value}</span>
+                      <span className="text-muted-foreground text-xs">ms</span>
+                    </div>
+                  )}
                 />
               }
+              cursor={false}
             />
             <Line
               dataKey="p95"

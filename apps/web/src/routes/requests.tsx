@@ -4,7 +4,7 @@ import {
   Link,
   stripSearchParams,
 } from "@tanstack/react-router";
-import { ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown, Loader } from "lucide-react";
 import { useState } from "react";
 import z from "zod/v4";
 import RequestDetails from "@/components/request-details";
@@ -98,7 +98,7 @@ function RouteComponent() {
     <>
       <div className="grid h-screen grid-cols-[auto_1fr] overflow-hidden">
         <div className="grid w-72 grid-rows-[auto_1fr_auto] overflow-hidden border-r">
-          <div className="flex items-center justify-between p-2">
+          <div className="flex items-center justify-between p-4">
             <Link to="/">
               <h1 className="font-semibold text-lg">Ping Status</h1>
             </Link>
@@ -110,10 +110,12 @@ function RouteComponent() {
         </div>
         <Table>
           <TableHeader>
-            <TableRow className="sticky top-0 bg-muted hover:bg-muted">
-              <TableHead className="text-muted-foreground">Monitor</TableHead>
+            <TableRow className="sticky top-0 border-none bg-zinc-100 outline-1 outline-border hover:bg-zinc-100 dark:bg-zinc-900 hover:dark:bg-zinc-900">
+              <TableHead className="border-r text-muted-foreground">
+                Monitor
+              </TableHead>
               <TableHead
-                className="cursor-pointer text-muted-foreground hover:text-foreground"
+                className="cursor-pointer border-r text-muted-foreground hover:text-foreground"
                 onClick={() => handleSort("createdAt")}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -121,12 +123,20 @@ function RouteComponent() {
                   <ChevronsUpDown className="size-4" />
                 </div>
               </TableHead>
-              <TableHead className="text-muted-foreground">Status</TableHead>
-              <TableHead className="text-muted-foreground">Method</TableHead>
-              <TableHead className="text-muted-foreground">Host</TableHead>
-              <TableHead className="text-muted-foreground">Pathname</TableHead>
+              <TableHead className="border-r text-muted-foreground">
+                Status
+              </TableHead>
+              <TableHead className="border-r text-muted-foreground">
+                Method
+              </TableHead>
+              <TableHead className="border-r text-muted-foreground">
+                Host
+              </TableHead>
+              <TableHead className="border-r text-muted-foreground">
+                Pathname
+              </TableHead>
               <TableHead
-                className="cursor-pointer text-muted-foreground hover:text-foreground"
+                className="cursor-pointer border-r text-muted-foreground hover:text-foreground"
                 onClick={() => handleSort("responseTime")}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -144,7 +154,7 @@ function RouteComponent() {
               .flatMap((page) => page.requests)
               .map((request) => (
                 <RequestRow
-                  isSelect={request.id === selectedRequest?.id}
+                  isSelected={request.id === selectedRequest?.id}
                   key={request.id}
                   onSelect={() =>
                     setSelectedRequest((prev) =>
@@ -155,13 +165,18 @@ function RouteComponent() {
                 />
               ))}
             {hasNextPage && (
-              <TableRow>
-                <TableCell
-                  className="cursor-pointer text-center"
-                  colSpan={8}
-                  onClick={() => fetchNextPage()}
-                >
-                  {isFetchingNextPage ? "Loading more..." : "Load more..."}
+              <TableRow className="cursor-pointer">
+                <TableCell colSpan={8} onClick={() => fetchNextPage()}>
+                  <div className="flex items-center justify-center gap-2">
+                    {isFetchingNextPage && (
+                      <Loader className="size-4 animate-spin" />
+                    )}
+                    <span>
+                      {isFetchingNextPage
+                        ? "Loading more..."
+                        : "Click to load more"}
+                    </span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

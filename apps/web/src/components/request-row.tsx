@@ -7,32 +7,34 @@ import { cn } from "@/lib/utils";
 function RequestRow({
   request,
   onSelect,
-  isSelect,
+  isSelected,
 }: {
   request: Awaited<ReturnType<typeof client.requests>>["requests"][number];
   onSelect: () => void;
-  isSelect: boolean;
+  isSelected: boolean;
 }) {
   const url = new URL(request.url);
   return (
     <TableRow
-      className={cn(
-        "cursor-pointer divide-x data-[selected=true]:bg-muted data-[selected=true]:ring",
-        {
-          "bg-monitor-status-degraded/10 hover:bg-monitor-status-degraded/20 data-[selected=true]:bg-monitor-status-degraded/20 data-[selected=true]:ring-monitor-status-degraded":
-            request.status >= 400 && request.status < 500,
-          "bg-monitor-status-down/10 hover:bg-monitor-status-down/20 data-[selected=true]:bg-monitor-status-down/20 data-[selected=true]:ring-monitor-status-down":
-            !request.success || (request.status >= 500 && request.status < 600),
-        }
-      )}
-      data-selected={isSelect}
+      className={cn("cursor-pointer data-[selected=true]:bg-muted", {
+        "bg-monitor-status-degraded/10 hover:bg-monitor-status-degraded/20 data-[selected=true]:bg-monitor-status-degraded/20 data-[selected=true]:ring-monitor-status-degraded":
+          request.status >= 400 && request.status < 500,
+        "bg-monitor-status-down/10 hover:bg-monitor-status-down/20 data-[selected=true]:bg-monitor-status-down/20 data-[selected=true]:ring-monitor-status-down":
+          !request.success || (request.status >= 500 && request.status < 600),
+      })}
+      data-selected={isSelected}
       key={request.id}
       onClick={onSelect}
     >
-      <TableCell className="font-medium">{request.monitorName}</TableCell>
-      <TableCell>{format(request.createdAt, "LLL d, yyyy HH:mm:ss")}</TableCell>
+      <TableCell className="border-r font-medium">
+        {request.monitorName}
+      </TableCell>
+      <TableCell className="border-r">
+        {format(request.createdAt, "LLL d, yyyy HH:mm:ss")}
+      </TableCell>
       <TableCell
         className={cn(
+          "border-r",
           {
             "text-monitor-status-operational":
               request.status >= 200 && request.status < 300,
@@ -46,11 +48,18 @@ function RequestRow({
       >
         {request.status || "-"}
       </TableCell>
-      <TableCell className="text-muted-foreground">{request.method}</TableCell>
-      <TableCell>{url.host}</TableCell>
-      <TableCell className="max-w-40 truncate">{url.pathname}</TableCell>
+      <TableCell className="border-r text-muted-foreground">
+        {request.method}
+      </TableCell>
+      <TableCell className="border-r">{url.host}</TableCell>
+      <TableCell className="max-w-40 truncate border-r">
+        {url.pathname}
+      </TableCell>
       <TableCell
-        className={cn(!request.responseTime && "text-muted-foreground")}
+        className={cn(
+          "border-r",
+          !request.responseTime && "text-muted-foreground"
+        )}
       >
         {request.responseTime || "-"}
       </TableCell>

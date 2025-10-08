@@ -59,7 +59,7 @@ function RequestDetails({ request }: RequestDetailsProps) {
   const url = new URL(request.url);
 
   return (
-    <SheetContent className="grid w-[500px] grid-rows-[auto_1fr] gap-0 overflow-y-hidden">
+    <SheetContent className="grid grid-rows-[auto_1fr] gap-0 overflow-y-hidden">
       <SheetHeader>
         <SheetTitle>{request?.monitorName}</SheetTitle>
         <SheetDescription className="sr-only">Description</SheetDescription>
@@ -67,7 +67,10 @@ function RequestDetails({ request }: RequestDetailsProps) {
       <div className="overflow-y-auto p-4">
         <div className="divide-y">
           <RequestDetailsItem label="Request ID">
-            #{request.id}
+            <div className="space-x-0.5">
+              <span className="text-muted-foreground">#</span>
+              <span>{request.id}</span>
+            </div>
           </RequestDetailsItem>
           <RequestDetailsItem label="Date">
             {format(request.createdAt, "LLL d, yyyy HH:mm:ss")}
@@ -93,13 +96,18 @@ function RequestDetails({ request }: RequestDetailsProps) {
           <RequestDetailsItem label="Pathname">
             {url.pathname}
           </RequestDetailsItem>
+          {url.searchParams.size > 0 && (
+            <RequestDetailsItem label="Search">
+              {url.searchParams.toString()}
+            </RequestDetailsItem>
+          )}
           <RequestDetailsItem label="Response Time">
-            <span>
-              {request.responseTime || "-"}
+            <div className="space-x-0.5">
+              <span>{request.responseTime || "-"}</span>
               {request.responseTime > 0 && (
                 <span className="text-muted-foreground text-sm">ms</span>
               )}
-            </span>
+            </div>
           </RequestDetailsItem>
           <RequestDetailsItem label="Validation">
             <Badge

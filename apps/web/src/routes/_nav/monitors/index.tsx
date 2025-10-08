@@ -77,7 +77,7 @@ function RouteComponent() {
                     labelFormatter={(date) => format(date, "MMM d, HH:mm")}
                     valueFormatter={(value) => (
                       <div className="space-x-0.5">
-                        <span>{Math.round(value)}</span>
+                        <span>{value}</span>
                         <span className="text-muted-foreground text-xs">
                           ms
                         </span>
