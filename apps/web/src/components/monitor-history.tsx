@@ -11,27 +11,33 @@ import { cn } from "@/lib/utils";
 type MonitorHistoryProps = Awaited<ReturnType<typeof client.history>>[number];
 type MonitorStatusDay = MonitorHistoryProps["days"][number];
 
-function getColors({ fail, success, total }: MonitorStatusDay) {
+function getColors(m: MonitorStatusDay) {
   return {
     "bg-muted-foreground/20 data-[state=delayed-open]:bg-muted-foreground/30":
-      total === 0,
+      m.total === 0,
     "bg-monitor-status-operational/90 data-[state=delayed-open]:bg-monitor-status-operational":
-      total > 0 && success === total,
+      m.total > 0 && m.operational === m.total,
+    "bg-monitor-status-degraded/90 data-[state=delayed-open]:bg-monitor-status-degraded":
+      m.degraded >= 1,
     "bg-monitor-status-down/90 data-[state=delayed-open]:bg-monitor-status-down":
-      fail >= 1,
+      m.down >= 1,
   };
 }
 
-function getDescription({ success, total }: MonitorStatusDay) {
-  if (total === 0) {
+function getDescription(m: MonitorStatusDay) {
+  if (m.total === 0) {
     return "Missing";
   }
 
-  if (success === total) {
-    return "Operational";
+  if (m.down >= 1) {
+    return "Downtime";
   }
 
-  return "Downtime";
+  if (m.degraded >= 1) {
+    return "Degraded";
+  }
+
+  return "Operational";
 }
 
 function MonitorStatusDay(v: MonitorStatusDay) {
@@ -68,9 +74,9 @@ function MonitorStatusDay(v: MonitorStatusDay) {
                 </span>
                 <span>
                   <span className="text-monitor-status-down text-sm">
-                    {v.fail}
+                    {v.down}
                   </span>{" "}
-                  failed
+                  down
                 </span>
               </div>
             </div>

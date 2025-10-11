@@ -14,11 +14,16 @@ export const getIncidentOperations = (
       );
 
       if (relatedIncident) {
-        if (ping.success) {
+        if (ping.status === "operational") {
+          acc.incidentsToClose.push(relatedIncident.id);
+        } else if (ping.status !== relatedIncident.type) {
           acc.incidentsToClose.push(relatedIncident.id);
         }
-      } else if (!ping.success) {
-        acc.incidentsToOpen.push(ping.monitorName);
+      } else if (ping.status !== "operational") {
+        acc.incidentsToOpen.push({
+          monitorName: ping.monitorName,
+          type: ping.status,
+        });
       }
 
       return acc;
@@ -27,7 +32,7 @@ export const getIncidentOperations = (
       incidentsToOpen: [],
       incidentsToClose: [],
     } as {
-      incidentsToOpen: string[];
+      incidentsToOpen: Pick<Incident, "monitorName" | "type">[];
       incidentsToClose: number[];
     }
   );

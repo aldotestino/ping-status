@@ -34,16 +34,13 @@ const program = Effect.gen(function* () {
   let openedIncidents: Incident[] = [];
   if (incidentsToOpen.length > 0) {
     openedIncidents = yield* drizzle.query((client) =>
-      client
-        .insert(incident)
-        .values(incidentsToOpen.map((name) => ({ monitorName: name })))
-        .returning()
+      client.insert(incident).values(incidentsToOpen).returning()
     );
 
     yield* Console.log(`opened ${openedIncidents.length} incidents`);
 
     // send notification
-    notifier.notifyOpenIncidents(
+    yield* notifier.notifyOpenIncidents(
       openedIncidents.map((i) => {
         // biome-ignore lint/style/noNonNullAssertion: is there 100%
         const ping = pings.find((p) => p.monitorName === i.monitorName)!;
@@ -73,7 +70,7 @@ const program = Effect.gen(function* () {
     yield* Console.log(`closed ${closed.length} incidents`);
 
     // send notification
-    notifier.notifyClosedIncidents(closed);
+    yield* notifier.notifyClosedIncidents(closed);
   }
 
   const newCurrentOpenIncidents = currentOpenIncidents

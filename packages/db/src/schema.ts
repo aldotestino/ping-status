@@ -1,8 +1,8 @@
 import { relations } from "drizzle-orm";
 import {
-  boolean,
   index,
   integer,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -10,15 +10,24 @@ import {
 import { createSelectSchema } from "drizzle-zod";
 import type { z } from "zod";
 
+export const pingStatus = pgEnum("status", ["operational", "degraded", "down"]);
+
+export const incidentType = pgEnum("type", ["degraded", "down"]);
+
+// success = passed validation
+// degraded = passed validation but response time is above degraded threshold
+// failed = validation failed (or cannot connect)
+// timeout = connection timed out
+
 export const pingResult = pgTable(
   "pingResult",
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     monitorName: text().notNull(),
-    success: boolean().notNull(),
+    status: pingStatus().notNull(),
     message: text(),
     responseTime: integer().notNull(),
-    status: integer().notNull(),
+    statusCode: integer().notNull(),
     createdAt: timestamp().notNull().defaultNow(),
     incidentId: integer().references(() => incident.id),
   },
@@ -39,6 +48,7 @@ export const incident = pgTable(
   {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
     monitorName: text().notNull(),
+    type: incidentType().notNull(),
     openedAt: timestamp().notNull().defaultNow(),
     closedAt: timestamp(),
   },

@@ -18,9 +18,9 @@ function RequestRow({
     <TableRow
       className={cn("cursor-pointer data-[selected=true]:bg-muted", {
         "bg-monitor-status-degraded/10 hover:bg-monitor-status-degraded/20 data-[selected=true]:bg-monitor-status-degraded/20 data-[selected=true]:ring-monitor-status-degraded":
-          request.status >= 400 && request.status < 500,
+          request.status === "degraded",
         "bg-monitor-status-down/10 hover:bg-monitor-status-down/20 data-[selected=true]:bg-monitor-status-down/20 data-[selected=true]:ring-monitor-status-down":
-          !request.success || (request.status >= 500 && request.status < 600),
+          request.status === "down",
       })}
       data-selected={isSelected}
       key={request.id}
@@ -37,11 +37,11 @@ function RequestRow({
           "border-r",
           {
             "text-monitor-status-operational":
-              request.status >= 200 && request.status < 300,
+              request.statusCode >= 200 && request.statusCode < 300,
             "text-monitor-status-degraded":
-              request.status >= 400 && request.status < 500,
+              request.statusCode >= 400 && request.statusCode < 500,
             "text-monitor-status-down":
-              request.status >= 500 && request.status < 600,
+              request.statusCode >= 500 && request.statusCode < 600,
           },
           !request.status && "text-muted-foreground"
         )}
@@ -65,14 +65,16 @@ function RequestRow({
       </TableCell>
       <TableCell>
         <Badge
-          className={cn({
+          className={cn("capitalize", {
             "bg-monitor-status-operational/20 text-monitor-status-operational":
-              request.success,
+              request.status === "operational",
+            "bg-monitor-status-degraded/20 text-monitor-status-degraded":
+              request.status === "degraded",
             "bg-monitor-status-down/20 text-monitor-status-down":
-              !request.success,
+              request.status === "down",
           })}
         >
-          {request.success ? "Success" : "Fail"}
+          {request.status}
         </Badge>
       </TableCell>
     </TableRow>

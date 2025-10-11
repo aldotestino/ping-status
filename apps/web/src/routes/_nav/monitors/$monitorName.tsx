@@ -79,12 +79,16 @@ export const Route = createFileRoute("/_nav/monitors/$monitorName")({
 });
 
 const pingResultsChartConfig = {
-  success: {
-    label: "Success",
+  operational: {
+    label: "Operational",
     color: "var(--monitor-status-operational)",
   },
-  fail: {
-    label: "Fail",
+  degraded: {
+    label: "Degraded",
+    color: "var(--monitor-status-degraded)",
+  },
+  down: {
+    label: "Down",
     color: "var(--monitor-status-down)",
   },
 } satisfies ChartConfig;
@@ -158,10 +162,10 @@ function RouteComponent() {
             value={stats.uptime.value.toFixed(2)}
           />
           <MonitorStat
-            change={stats.fails.change}
+            change={stats.down.change}
             name="Failing"
             unit="#"
-            value={stats.fails.value}
+            value={stats.down.value}
           />
           <MonitorStat name="Requests" unit="#" value={stats.total} />
           <MonitorStat
@@ -207,11 +211,16 @@ function RouteComponent() {
             />
             <ChartLegend content={<ChartLegendContent />} />
             <Bar
-              dataKey="success"
+              dataKey="operational"
               fill="var(--monitor-status-operational)"
               stackId="a"
             />
-            <Bar dataKey="fail" fill="var(--monitor-status-down)" stackId="a" />
+            <Bar dataKey="down" fill="var(--monitor-status-down)" stackId="a" />
+            <Bar
+              dataKey="degraded"
+              fill="var(--monitor-status-degraded)"
+              stackId="a"
+            />
           </BarChart>
         </ChartContainer>
       </div>

@@ -1,5 +1,4 @@
 import { HttpClient, HttpClientRequest } from "@effect/platform";
-import { env } from "@ping-status/env";
 import type { Monitor } from "@ping-status/monitor";
 import { Console, Duration, Effect, Match, pipe, Schedule } from "effect";
 
@@ -44,7 +43,7 @@ export class MonitorPinger extends Effect.Service<MonitorPinger>()(
             const [duration, response] = yield* Effect.timed(
               client
                 .execute(createRequest(monitor))
-                .pipe(Effect.timeout(Duration.millis(env.MONITOR_TIMEOUT_MS)))
+                .pipe(Effect.timeout(Duration.millis(monitor.timeout)))
             ).pipe(
               // retries only for request and response errors (as defined in while clause)
               Effect.tapErrorTag("RequestError", (err) =>
@@ -58,9 +57,9 @@ export class MonitorPinger extends Effect.Service<MonitorPinger>()(
                 )
               ),
               Effect.retry({
-                times: env.MONITOR_RETRIES,
+                times: monitor.maxRetries,
                 schedule: Schedule.exponential(
-                  Duration.millis(env.MONITOR_RETRY_DELAY_MS)
+                  Duration.millis(monitor.retryDelay)
                 ),
                 while: (err) => err._tag !== "TimeoutException",
               })

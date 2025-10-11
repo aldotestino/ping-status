@@ -24,12 +24,12 @@ export class MonitorProcessor extends Effect.Service<MonitorProcessor>()(
             }),
             Effect.match({
               onFailure: (error) => ({
-                success: false,
+                status: "down",
                 incidentId: null,
                 message: error.message,
                 monitorName: monitor.name,
                 responseTime: 0,
-                status: 0,
+                statusCode: 0,
               }),
               onSuccess: (result) => {
                 const validation = monitor.validator({
@@ -38,13 +38,38 @@ export class MonitorProcessor extends Effect.Service<MonitorProcessor>()(
                   status: result.status,
                 });
 
+                if (!validation.success) {
+                  return {
+                    status: "down",
+                    statusCode: result.status,
+                    message: validation.message,
+                    monitorName: monitor.name,
+                    responseTime: result.responseTime,
+                    incidentId: null,
+                  };
+                }
+
+                if (
+                  monitor.degradedThreshold &&
+                  result.responseTime > monitor.degradedThreshold
+                ) {
+                  return {
+                    status: "degraded",
+                    statusCode: result.status,
+                    monitorName: monitor.name,
+                    responseTime: result.responseTime,
+                    message: null,
+                    incidentId: null,
+                  };
+                }
+
                 return {
-                  success: validation.success,
+                  status: "operational",
+                  statusCode: result.status,
                   incidentId: null,
-                  message: validation.message ?? null,
                   monitorName: monitor.name,
                   responseTime: result.responseTime,
-                  status: result.status,
+                  message: null,
                 };
               },
             })

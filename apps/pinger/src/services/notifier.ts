@@ -14,7 +14,7 @@ function formatOpenIncidentsMessage(incidents: OpenIncident[]) {
     ...incidents.map((i) => [
       i.monitorName,
       i.id,
-      "🔴 Down",
+      i.type === "down" ? "🔴 Down" : "🟡 Degraded",
       i.status,
       i.message,
     ]),
@@ -83,6 +83,7 @@ export class Notifier extends Effect.Service<Notifier>()("Notifier", {
             HttpClientRequest.bodyUnsafeJson(message)
           )
         ),
+        Effect.tap((res) => Console.log(`Notification sent: ${res.status}`)),
         Effect.tapError((err) =>
           Console.warn(`Failed to notify: ${err.message}`)
         ),
