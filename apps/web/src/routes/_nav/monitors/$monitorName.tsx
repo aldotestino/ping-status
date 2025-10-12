@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   XAxis,
   YAxis,
 } from "recharts";
@@ -262,6 +263,18 @@ function RouteComponent() {
               }
               cursor={false}
             />
+            {monitor.degradedThreshold && (
+              <ReferenceLine
+                label={{
+                  value: `Degraded threshold: ${monitor.degradedThreshold}ms`,
+                  position: "insideBottomRight",
+                }}
+                stroke="var(--monitor-status-degraded)"
+                strokeDasharray="10 5"
+                strokeWidth={1}
+                y={monitor.degradedThreshold}
+              />
+            )}
             <Line
               dataKey="p95"
               dot={false}

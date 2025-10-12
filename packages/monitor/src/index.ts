@@ -70,6 +70,7 @@ export const monitors = [
   monitor({
     name: "example-monitor-2",
     url: "http://localhost:4000/204",
+    degradedThreshold: 200,
     validator: ({ status }) =>
       status === 204
         ? { success: true }
