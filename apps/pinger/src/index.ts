@@ -48,7 +48,7 @@ const program = Effect.gen(function* () {
         return {
           ...i,
           message: ping.message,
-          status: ping.status,
+          statusCode: ping.statusCode,
           responseTime: ping.responseTime,
         };
       })

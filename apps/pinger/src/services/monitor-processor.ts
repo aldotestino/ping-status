@@ -58,7 +58,7 @@ export class MonitorProcessor extends Effect.Service<MonitorProcessor>()(
                     statusCode: result.status,
                     monitorName: monitor.name,
                     responseTime: result.responseTime,
-                    message: null,
+                    message: `Response time was above degraded threshold (${monitor.degradedThreshold}ms)`,
                     incidentId: null,
                   };
                 }

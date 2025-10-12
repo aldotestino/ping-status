@@ -32,7 +32,7 @@ function RequestDetailsItem({
 }) {
   return (
     <div
-      className={cn("flex items-center justify-between gap-4 py-2 text-sm", {
+      className={cn("flex items-center justify-between gap-2 py-2 text-sm", {
         "flex-col items-start": orientation === "vertical",
       })}
     >
@@ -133,7 +133,13 @@ function RequestDetails({ request }: RequestDetailsProps) {
               </RequestDetailsItem>
               <RequestDetailsItem label="Message" orientation="vertical">
                 <Item
-                  className="w-full bg-monitor-status-down/20 text-monitor-status-down"
+                  // className="w-full bg-monitor-status-down/20 text-monitor-status-down"
+                  className={cn("w-full", {
+                    "bg-monitor-status-down/20 text-monitor-status-down":
+                      request.status === "down",
+                    "bg-monitor-status-degraded/20 text-monitor-status-degraded":
+                      request.status === "degraded",
+                  })}
                   variant="muted"
                 >
                   <ItemContent className="break-all">

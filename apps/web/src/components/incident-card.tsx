@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { format, formatDistance, formatDistanceToNow } from "date-fns";
-import { List } from "lucide-react";
+import { Logs } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,16 +28,28 @@ export function IncidentCard(incident: IncidentCardProps) {
             <CardTitle>{incident.monitorName}</CardTitle>
             <CardDescription>Incident #{incident.id}</CardDescription>
           </div>
-          <Badge
-            className={cn({
-              "bg-monitor-status-operational/20 text-monitor-status-operational":
-                incident.closedAt,
-              "bg-monitor-status-down/20 text-monitor-status-down":
-                !incident.closedAt,
-            })}
-          >
-            {incident.closedAt ? "Closed" : "Open"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge
+              className={cn("capitalize", {
+                "bg-monitor-status-down/20 text-monitor-status-down":
+                  incident.type === "down",
+                "bg-monitor-status-degraded/20 text-monitor-status-degraded":
+                  incident.type === "degraded",
+              })}
+            >
+              {incident.type}
+            </Badge>
+            <Badge
+              className={cn({
+                "bg-monitor-status-operational/20 text-monitor-status-operational":
+                  incident.closedAt,
+                "bg-monitor-status-down/20 text-monitor-status-down":
+                  !incident.closedAt,
+              })}
+            >
+              {incident.closedAt ? "Closed" : "Open"}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
 
@@ -103,7 +115,7 @@ export function IncidentCard(incident: IncidentCardProps) {
 
         <Button asChild className="w-full" variant="outline">
           <Link search={{ incidentId: incident.id }} to="/requests">
-            <List />
+            <Logs />
             View Failed Requests
           </Link>
         </Button>

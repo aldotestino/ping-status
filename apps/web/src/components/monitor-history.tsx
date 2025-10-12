@@ -1,4 +1,5 @@
 import { format, formatDistance } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -99,11 +100,26 @@ function MonitorHistory({
   days,
   monitorName,
   successRate,
+  lastStatus,
 }: MonitorHistoryProps) {
   return (
     <div className="space-y-2">
-      <div className="flex justify-between">
-        <span className="font-semibold">{monitorName}</span>
+      <div className="flex justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">{monitorName}</span>
+          {lastStatus && lastStatus !== "operational" && (
+            <Badge
+              className={cn("capitalize", {
+                "bg-monitor-status-degraded/20 text-monitor-status-degraded":
+                  lastStatus === "degraded",
+                "bg-monitor-status-down/20 text-monitor-status-down":
+                  lastStatus === "down",
+              })}
+            >
+              {lastStatus}
+            </Badge>
+          )}
+        </div>
         <span className="text-muted-foreground text-sm">
           {successRate.toFixed(2)}%
         </span>

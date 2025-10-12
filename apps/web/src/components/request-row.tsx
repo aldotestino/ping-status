@@ -46,7 +46,7 @@ function RequestRow({
           !request.status && "text-muted-foreground"
         )}
       >
-        {request.status || "-"}
+        {request.statusCode || "-"}
       </TableCell>
       <TableCell className="border-r text-muted-foreground">
         {request.method}

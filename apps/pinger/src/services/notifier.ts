@@ -6,7 +6,7 @@ import { Console, Duration, Effect, pipe, Schedule } from "effect";
 import { table } from "table";
 
 type OpenIncident = Incident &
-  Pick<PingResult, "status" | "responseTime" | "message">;
+  Pick<PingResult, "statusCode" | "responseTime" | "message">;
 
 function formatOpenIncidentsMessage(incidents: OpenIncident[]) {
   const tableData = [
@@ -15,7 +15,7 @@ function formatOpenIncidentsMessage(incidents: OpenIncident[]) {
       i.monitorName,
       i.id,
       i.type === "down" ? "🔴 Down" : "🟡 Degraded",
-      i.status,
+      i.statusCode,
       i.message,
     ]),
   ];

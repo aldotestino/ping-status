@@ -59,7 +59,9 @@ const monitor = (config: MonitorConfig): Monitor => {
 export const monitors = [
   monitor({
     name: "example-monitor",
-    url: "http://host.docker.internal:4000/200",
+    url: "http://localhost:4000/200",
+    timeout: 2500,
+    degradedThreshold: 100,
     validator: ({ status }) =>
       status === 200
         ? { success: true }
@@ -67,7 +69,7 @@ export const monitors = [
   }),
   monitor({
     name: "example-monitor-2",
-    url: "http://host.docker.internal:4000/204",
+    url: "http://localhost:4000/204",
     validator: ({ status }) =>
       status === 204
         ? { success: true }
