@@ -7,9 +7,9 @@ import {
 import { ChevronsUpDown, Loader } from "lucide-react";
 import { useState } from "react";
 import z from "zod/v4";
-import RequestDetails from "@/components/request-details";
-import RequestRow from "@/components/request-row";
-import RequestsFilters from "@/components/requests-filters";
+import RequestDetails from "@/components/requests/request-details";
+import RequestRow from "@/components/requests/request-row";
+import RequestsFilters from "@/components/requests/requests-filters";
 import ThemeToggle from "@/components/theme-toggle";
 import { Sheet } from "@/components/ui/sheet";
 import {
@@ -111,7 +111,7 @@ function RouteComponent() {
             </Link>
             <ThemeToggle />
           </div>
-          <div className="overflow-y-auto pt-0">
+          <div className="overflow-y-auto py-2">
             <RequestsFilters />
           </div>
         </div>

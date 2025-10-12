@@ -205,6 +205,7 @@ function RouteComponent() {
             <ChartTooltip
               content={
                 <ChartTooltipContent
+                  className="w-36"
                   indicator="line"
                   labelFormatter={(date) => format(date, "MMM d, HH:mm")}
                 />
