@@ -28,6 +28,8 @@ export const Route = createFileRoute("/requests")({
     statusCode: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
     status: z.array(z.enum(["operational", "degraded", "down"])).default([]),
     incidentId: z.coerce.number().min(0).optional(),
+    from: z.int().min(0).optional(),
+    to: z.int().min(0).optional(),
     sort: z
       .object({
         field: z.enum(["createdAt", "responseTime"]).default("createdAt"),

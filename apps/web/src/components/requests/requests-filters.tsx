@@ -1,77 +1,16 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Search } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Checkbox } from "@/components/ui/checkbox";
+import Filter from "@/components/requests/filters";
+import CheckboxFilter from "@/components/requests/filters/checkbox-filter";
+import TimeRangeFilter from "@/components/requests/filters/time-range-filter";
+import { Accordion } from "@/components/ui/accordion";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Label } from "@/components/ui/label";
 import { orpc } from "@/lib/orpc";
-import { cn } from "@/lib/utils";
-
-function Filter({
-  label,
-  children,
-  className,
-  ...props
-}: {
-  label: string;
-  children: React.ReactNode;
-} & Omit<React.ComponentProps<typeof AccordionItem>, "children">) {
-  return (
-    <AccordionItem className={cn("border-none px-2", className)} {...props}>
-      <AccordionTrigger className="p-2 text-muted-foreground hover:text-foreground hover:no-underline">
-        {label}
-      </AccordionTrigger>
-      <AccordionContent className="p-2">{children}</AccordionContent>
-    </AccordionItem>
-  );
-}
-
-function CheckboxFilter<T extends string>({
-  values,
-  onValuesChange,
-  options,
-}: {
-  values: T[];
-  onValuesChange: (values: T[]) => void;
-  options: {
-    value: T;
-    label: string;
-  }[];
-}) {
-  const handleCheckedChange = (checked: boolean, value: T) => {
-    const newValues = checked
-      ? [...new Set([...values, value])]
-      : values.filter((v1) => v1 !== value);
-    onValuesChange(newValues);
-  };
-
-  return (
-    <div className="divide-y rounded-md border">
-      {options.map((o) => (
-        <div className="flex items-center gap-2 p-2" key={o.value}>
-          <Checkbox
-            checked={values.includes(o.value)}
-            id={o.value}
-            onCheckedChange={(checked) =>
-              handleCheckedChange(checked as boolean, o.value)
-            }
-          />
-          <Label htmlFor={o.value}>{o.label}</Label>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function RequestsFilters() {
   const search = useSearch({
@@ -99,6 +38,16 @@ function RequestsFilters() {
 
   return (
     <Accordion type="multiple">
+      <Filter label="Time Range" value="time">
+        <TimeRangeFilter
+          onValuesChange={(timeRange) =>
+            navigate({
+              search: { ...search, ...timeRange },
+            })
+          }
+          timeRange={{ from: search.from, to: search.to }}
+        />
+      </Filter>
       <Filter label="Status Code" value="statusCode">
         <CheckboxFilter
           onValuesChange={(values) =>
@@ -118,9 +67,25 @@ function RequestsFilters() {
             navigate({ search: { ...search, status: values } })
           }
           options={[
-            { value: "operational", label: "Operational" },
-            { value: "degraded", label: "Degraded" },
-            { value: "down", label: "Down" },
+            {
+              value: "operational",
+              label: "Operational",
+              addon: (
+                <div className="size-3 rounded bg-monitor-status-operational" />
+              ),
+            },
+            {
+              value: "degraded",
+              label: "Degraded",
+              addon: (
+                <div className="size-3 rounded bg-monitor-status-degraded" />
+              ),
+            },
+            {
+              value: "down",
+              label: "Down",
+              addon: <div className="size-3 rounded bg-monitor-status-down" />,
+            },
           ]}
           values={search.status}
         />
@@ -130,7 +95,13 @@ function RequestsFilters() {
           onValuesChange={(values) =>
             navigate({ search: { ...search, monitorName: values } })
           }
-          options={monitors.map((m) => ({ value: m.name, label: m.name }))}
+          options={monitors.map((m) => ({
+            value: m.name,
+            label: m.name,
+            addon: (
+              <span className="text-muted-foreground text-xs">{m.method}</span>
+            ),
+          }))}
           values={search.monitorName}
         />
       </Filter>
