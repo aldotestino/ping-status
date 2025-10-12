@@ -69,8 +69,15 @@ const program = Effect.gen(function* () {
 
     yield* Console.log(`closed ${closed.length} incidents`);
 
-    // send notification
-    yield* notifier.notifyClosedIncidents(closed);
+    // from closed incidents, filter out the monitor names that are included in the new opened (incident escalated or de-escaleted)
+    const closedIncidentsToNotify = closed.filter(
+      (i) => !openedIncidents.some((o) => o.monitorName === i.monitorName)
+    );
+
+    if (closedIncidentsToNotify.length > 0) {
+      // send notification
+      yield* notifier.notifyClosedIncidents(closedIncidentsToNotify);
+    }
   }
 
   const newCurrentOpenIncidents = currentOpenIncidents
