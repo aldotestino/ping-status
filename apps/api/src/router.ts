@@ -19,7 +19,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import contract from "@/contract";
+import contract from "./contract";
 
 const router = implement(contract);
 
@@ -30,7 +30,7 @@ const health = router.health.handler(() => ({
 }));
 
 const monitors = router.monitors.handler(() =>
-  monitorsArray.map(({ validator: _, ...m }) => m)
+  monitorsArray.map(({ validator: _, headers: __, body: ___, ...m }) => m)
 );
 
 const history = router.history.handler(async () => {
@@ -46,11 +46,15 @@ const history = router.history.handler(async () => {
       monitorName: pingResult.monitorName,
       day: sql<string>`DATE(${pingResult.createdAt})`,
       total: count(),
-      success:
-        sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+      operational:
+        sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'operational' THEN 1 END)`.mapWith(
           Number
         ),
-      fail: sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+      degraded:
+        sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'degraded' THEN 1 END)`.mapWith(
+          Number
+        ),
+      down: sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'down' THEN 1 END)`.mapWith(
         Number
       ),
     })
@@ -72,7 +76,7 @@ const history = router.history.handler(async () => {
       monitorName: incident.monitorName,
       day: sql<string>`DATE(${incident.openedAt})`,
       totalDowntime:
-        sql<number>`SUM(EXTRACT(EPOCH FROM (COALESCE(${incident.closedAt}, NOW()) - ${incident.openedAt})))`.mapWith(
+        sql<string>`SUM(EXTRACT(EPOCH FROM (COALESCE(${incident.closedAt}, NOW()) - ${incident.openedAt})))`.mapWith(
           (v) => Math.round(v)
         ),
     })
@@ -80,6 +84,7 @@ const history = router.history.handler(async () => {
     .where(
       and(
         inArray(incident.monitorName, monitorNames),
+        eq(incident.type, "down"),
         gte(incident.openedAt, startOfPeriod)
       )
     )
@@ -90,10 +95,26 @@ const history = router.history.handler(async () => {
     (downtime) => downtime.monitorName
   );
 
+  const lastStatuses = await db
+    .selectDistinctOn([pingResult.monitorName], {
+      monitorName: pingResult.monitorName,
+      status: pingResult.status,
+      createdAt: pingResult.createdAt,
+    })
+    .from(pingResult)
+    .where(inArray(pingResult.monitorName, monitorNames))
+    .orderBy(pingResult.monitorName, desc(pingResult.createdAt));
+
+  const lastStatusesByMonitor = Object.groupBy(
+    lastStatuses,
+    (status) => status.monitorName
+  );
+
   // Build the response structure
   const result = monitorNames.map((monitor) => {
     const monitorStats = statsByMonitor[monitor] || [];
     const monitorDowntime = downtimeByMonitor[monitor] || [];
+    const [lastStatus] = lastStatusesByMonitor[monitor] || [];
 
     // Create a map of existing days for quick lookup
     const statsByDay = new Map(monitorStats.map((stat) => [stat.day, stat]));
@@ -111,8 +132,9 @@ const history = router.history.handler(async () => {
         return {
           day: day.toISOString(),
           total: stat.total,
-          success: stat.success,
-          fail: stat.fail,
+          operational: stat.operational,
+          degraded: stat.degraded,
+          down: stat.down,
           totalDowntime,
         };
       }
@@ -121,14 +143,18 @@ const history = router.history.handler(async () => {
       return {
         day: day.toISOString(),
         total: 0,
-        success: 0,
-        fail: 0,
+        operational: 0,
+        degraded: 0,
+        down: 0,
       };
     });
 
     // Calculate overall success rate
     const totalRequests = dayData.reduce((acc, d) => acc + d.total, 0);
-    const totalSuccess = dayData.reduce((acc, d) => acc + d.success, 0);
+    const totalSuccess = dayData.reduce(
+      (acc, d) => acc + d.operational + d.degraded,
+      0
+    );
     const successRate =
       totalRequests > 0 ? (totalSuccess / totalRequests) * 100 : 100;
 
@@ -136,6 +162,7 @@ const history = router.history.handler(async () => {
       monitorName: monitor,
       successRate,
       days: dayData,
+      lastStatus: lastStatus?.status,
     };
   });
 
@@ -143,22 +170,20 @@ const history = router.history.handler(async () => {
 });
 
 const overview = router.overview.handler(async () => {
-  const [openIncidents] = await db
+  const monitorNames = monitorsArray.map((m) => m.name);
+
+  const openIncidents = await db
     .select({
-      count: count(),
+      monitorName: incident.monitorName,
+      type: incident.type,
     })
     .from(incident)
     .where(
       and(
-        inArray(
-          incident.monitorName,
-          monitorsArray.map((m) => m.name)
-        ),
+        inArray(incident.monitorName, monitorNames),
         isNull(incident.closedAt)
       )
     );
-
-  const down = openIncidents?.count ?? 0;
 
   const [lastPing] = await db
     .select()
@@ -169,9 +194,18 @@ const overview = router.overview.handler(async () => {
   const lastUpdated =
     lastPing?.createdAt.toISOString() ?? new Date().toISOString();
 
+  const incidentsByType = Object.groupBy(openIncidents, (i) => i.type);
+
+  const down = incidentsByType.down?.map((i) => i.monitorName) ?? [];
+  const degraded = incidentsByType.degraded?.map((i) => i.monitorName) ?? [];
+  const operational = monitorNames.filter(
+    (m) => ![...down, ...degraded].includes(m)
+  );
+
   return {
-    total: monitorsArray.length,
-    operational: monitorsArray.length - down,
+    monitors: monitorNames,
+    operational,
+    degraded,
     down,
     lastUpdated,
   };
@@ -281,6 +315,7 @@ const incidents = router.incidents.handler(async ({ input, errors }) => {
   };
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ok
 const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
   if (
     input.monitorName &&
@@ -295,7 +330,13 @@ const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
 
   const [openIncidents] = await db
     .select({
-      count: count(),
+      down: sql<number>`COUNT(CASE WHEN ${incident.type} = 'down' THEN 1 END)`.mapWith(
+        Number
+      ),
+      degraded:
+        sql<number>`COUNT(CASE WHEN ${incident.type} = 'degraded' THEN 1 END)`.mapWith(
+          Number
+        ),
     })
     .from(incident)
     .where(
@@ -305,18 +346,27 @@ const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
       )
     );
 
-  const down = openIncidents?.count ?? 0;
+  const down = openIncidents?.down ?? 0;
+  const degraded = openIncidents?.degraded ?? 0;
+
+  let message = "";
+  if (down > 0) {
+    message = input.monitorName
+      ? "Downtime"
+      : `Downtime (${down}/${monitorsArray.length})`;
+  } else if (degraded > 0) {
+    message = input.monitorName
+      ? "Degraded"
+      : `Degraded (${degraded}/${monitorsArray.length})`;
+  } else {
+    message = "Operational";
+  }
 
   const svg = makeBadge({
     style: "flat",
-    message:
-      down > 0
-        ? // biome-ignore lint/style/noNestedTernary: ok
-          input.monitorName
-          ? "Downtime"
-          : `Downtime (${down}/${monitorsArray.length})`
-        : "Operational",
-    color: down ? "#EC6041" : "#51B363",
+    message,
+    // biome-ignore lint/style/noNestedTernary: ok
+    color: down > 0 ? "#EC6041" : degraded > 0 ? "#FFA500" : "#51B363",
     label: input.monitorName ?? "All Systems",
     logoBase64:
       "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDciIGhlaWdodD0iMzYiIHZpZXdCb3g9IjAgMCA0NyAzNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAuNzUgMzUuOTk5OEwxNC41NzczIDM1Ljk5OThDMTcuMzMwNSAzNS45OTk4IDE5LjkxODQgMzQuNzMxOCAyMS41NDMzIDMyLjU4NjdMMzAuNDQ0MiAyMC44MzY2SDIxLjQzMTdDMjEuNDUxNSAxNy40NjA4IDI0LjMwNjUgMTQuNzMgMjcuODI1NyAxNC43M0wzMC41Mzc0IDE0LjczQzMzLjI0NDQgMTQuNzMgMzUuNzk0NSAxMy41MDM5IDM3LjQyNTIgMTEuNDE4NEw0Ni4zNTk3IC0wLjAwNzgxMjVIMzIuNDc4QzI5LjcyOTEgLTAuMDA3ODEyNSAyNy4xNDQ2IDEuMjU2MzQgMjUuNTE5IDMuMzk2MDRMMC43NSAzNS45OTk4WiIgZmlsbD0iI2ZmZmZmZiIvPgo8cGF0aCBkPSJNMzAuNTYzNyAyMC44MzY2VjM1Ljk5OThINDYuMzU5N1YyOS4xNjU1QzQ2LjM1OTcgMjQuNTY1NiA0Mi40OTYyIDIwLjgzNjYgMzcuNzMwNCAyMC44MzY2SDMwLjU2MzdaIiBmaWxsPSIjZmZmZmZmIi8+Cjwvc3ZnPgo=",
@@ -354,14 +404,17 @@ const monitorDetails = router.monitorDetails.handler(
     const [currentStats] = await db
       .select({
         total: count(),
-        success:
-          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+        operational:
+          sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'operational' THEN 1 END)`.mapWith(
             Number
           ),
-        fails:
-          sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+        degraded:
+          sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'degraded' THEN 1 END)`.mapWith(
             Number
           ),
+        down: sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'down' THEN 1 END)`.mapWith(
+          Number
+        ),
         lastTimestamp: max(pingResult.createdAt),
         p50: sql`percentile_cont(0.50) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
           (v) => Math.round(v)
@@ -385,19 +438,27 @@ const monitorDetails = router.monitorDetails.handler(
       throw errors.NOT_FOUND();
     }
 
-    const currentUptime = (currentStats.success / currentStats.total) * 100;
+    const currentUptime =
+      currentStats.total > 0
+        ? ((currentStats.operational + currentStats.degraded) /
+            currentStats.total) *
+          100
+        : 0;
 
     const [previousStats] = await db
       .select({
         total: count(),
-        success:
-          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+        operational:
+          sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'operational' THEN 1 END)`.mapWith(
             Number
           ),
-        fails:
-          sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+        degraded:
+          sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'degraded' THEN 1 END)`.mapWith(
             Number
           ),
+        down: sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'down' THEN 1 END)`.mapWith(
+          Number
+        ),
         p50: sql`percentile_cont(0.50) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
           (v) => Math.round(v)
         ),
@@ -421,18 +482,25 @@ const monitorDetails = router.monitorDetails.handler(
       throw errors.NOT_FOUND();
     }
 
-    const previousUptime = (previousStats.success / previousStats.total) * 100;
+    const previousUptime =
+      ((previousStats.operational + previousStats.degraded) /
+        previousStats.total) *
+      100;
 
     const pingResultsByHour = await db
       .select({
         date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
           (v) => new Date(v).toISOString()
         ),
-        success:
-          sql<number>`COUNT(CASE WHEN ${pingResult.success} = true THEN 1 END)`.mapWith(
+        operational:
+          sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'operational' THEN 1 END)`.mapWith(
             Number
           ),
-        fail: sql<number>`COUNT(CASE WHEN ${pingResult.success} = false THEN 1 END)`.mapWith(
+        degraded:
+          sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'degraded' THEN 1 END)`.mapWith(
+            Number
+          ),
+        down: sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'down' THEN 1 END)`.mapWith(
           Number
         ),
       })
@@ -476,36 +544,43 @@ const monitorDetails = router.monitorDetails.handler(
           value: currentUptime,
           change: calculatePercentageChange(currentUptime, previousUptime),
         },
-        success: {
-          value: currentStats.success,
+        operational: {
+          value: currentStats.operational,
           change: calculatePercentageChange(
-            currentStats.success,
-            previousStats.success
+            currentStats.operational,
+            previousStats.operational
           ),
         },
-        fails: {
-          value: currentStats.fails,
+        degraded: {
+          value: currentStats.degraded,
           change: calculatePercentageChange(
-            currentStats.fails,
-            previousStats.fails
+            currentStats.degraded,
+            previousStats.degraded
+          ),
+        },
+        down: {
+          value: currentStats.down,
+          change: calculatePercentageChange(
+            currentStats.down,
+            previousStats.down
           ),
         },
         p50: {
-          value: currentStats.p50,
+          value: currentStats.p50 ?? 0,
           change: calculatePercentageChange(
             currentStats.p50,
             previousStats.p50
           ),
         },
         p95: {
-          value: currentStats.p95,
+          value: currentStats.p95 ?? 0,
           change: calculatePercentageChange(
             currentStats.p95,
             previousStats.p95
           ),
         },
         p99: {
-          value: currentStats.p99,
+          value: currentStats.p99 ?? 0,
           change: calculatePercentageChange(
             currentStats.p99,
             previousStats.p99
@@ -538,21 +613,22 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
       ? inArray(pingResult.monitorName, input.monitorName)
       : inArray(pingResult.monitorName, monitorNames);
 
+  const statusCodeConditions = {
+    "2xx": and(gte(pingResult.statusCode, 200), lt(pingResult.statusCode, 300)),
+    "4xx": and(gte(pingResult.statusCode, 400), lt(pingResult.statusCode, 500)),
+    "5xx": and(gte(pingResult.statusCode, 500), lt(pingResult.statusCode, 600)),
+  };
+
   const statusConditions = {
-    "2xx": and(gte(pingResult.status, 200), lt(pingResult.status, 300)),
-    "4xx": and(gte(pingResult.status, 400), lt(pingResult.status, 500)),
-    "5xx": and(gte(pingResult.status, 500), lt(pingResult.status, 600)),
+    operational: eq(pingResult.status, "operational"),
+    degraded: eq(pingResult.status, "degraded"),
+    down: eq(pingResult.status, "down"),
   };
 
-  const validationConditions = {
-    success: eq(pingResult.success, true),
-    fail: eq(pingResult.success, false),
-  };
-
-  const statusCondition = or(...input.status.map((s) => statusConditions[s]));
-  const validationCheckCondition = or(
-    ...input.validation.map((v) => validationConditions[v])
+  const statusCodeCondition = or(
+    ...input.statusCode.map((s) => statusCodeConditions[s])
   );
+  const statusCondition = or(...input.status.map((s) => statusConditions[s]));
 
   const incidentIdCondition = input.incidentId
     ? eq(pingResult.incidentId, input.incidentId)
@@ -560,8 +636,8 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
 
   const where = and(
     monitorNameCondition,
+    statusCodeCondition,
     statusCondition,
-    validationCheckCondition,
     incidentIdCondition
   );
 

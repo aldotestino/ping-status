@@ -13,12 +13,27 @@ export const getIncidentOperations = (
         (i) => i.monitorName === ping.monitorName
       );
 
-      if (relatedIncident) {
-        if (ping.success) {
-          acc.incidentsToClose.push(relatedIncident.id);
-        }
-      } else if (!ping.success) {
-        acc.incidentsToOpen.push(ping.monitorName);
+      if (relatedIncident && ping.status === "operational") {
+        acc.incidentsToClose.push(relatedIncident.id);
+      }
+
+      if (
+        relatedIncident &&
+        ping.status !== "operational" &&
+        ping.status !== relatedIncident.type
+      ) {
+        acc.incidentsToClose.push(relatedIncident.id);
+        acc.incidentsToOpen.push({
+          monitorName: ping.monitorName,
+          type: ping.status,
+        });
+      }
+
+      if (!relatedIncident && ping.status !== "operational") {
+        acc.incidentsToOpen.push({
+          monitorName: ping.monitorName,
+          type: ping.status,
+        });
       }
 
       return acc;
@@ -27,7 +42,7 @@ export const getIncidentOperations = (
       incidentsToOpen: [],
       incidentsToClose: [],
     } as {
-      incidentsToOpen: string[];
+      incidentsToOpen: Pick<Incident, "monitorName" | "type">[];
       incidentsToClose: number[];
     }
   );

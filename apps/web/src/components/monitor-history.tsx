@@ -1,4 +1,5 @@
 import { format, formatDistance } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -11,27 +12,33 @@ import { cn } from "@/lib/utils";
 type MonitorHistoryProps = Awaited<ReturnType<typeof client.history>>[number];
 type MonitorStatusDay = MonitorHistoryProps["days"][number];
 
-function getColors({ fail, success, total }: MonitorStatusDay) {
+function getColors(m: MonitorStatusDay) {
   return {
     "bg-muted-foreground/20 data-[state=delayed-open]:bg-muted-foreground/30":
-      total === 0,
+      m.total === 0,
     "bg-monitor-status-operational/90 data-[state=delayed-open]:bg-monitor-status-operational":
-      total > 0 && success === total,
+      m.total > 0 && m.operational === m.total,
+    "bg-monitor-status-degraded/90 data-[state=delayed-open]:bg-monitor-status-degraded":
+      m.degraded >= 1,
     "bg-monitor-status-down/90 data-[state=delayed-open]:bg-monitor-status-down":
-      fail >= 1,
+      m.down >= 1,
   };
 }
 
-function getDescription({ success, total }: MonitorStatusDay) {
-  if (total === 0) {
+function getDescription(m: MonitorStatusDay) {
+  if (m.total === 0) {
     return "Missing";
   }
 
-  if (success === total) {
-    return "Operational";
+  if (m.down >= 1) {
+    return "Downtime";
   }
 
-  return "Downtime";
+  if (m.degraded >= 1) {
+    return "Degraded";
+  }
+
+  return "Operational";
 }
 
 function MonitorStatusDay(v: MonitorStatusDay) {
@@ -68,9 +75,9 @@ function MonitorStatusDay(v: MonitorStatusDay) {
                 </span>
                 <span>
                   <span className="text-monitor-status-down text-sm">
-                    {v.fail}
+                    {v.down}
                   </span>{" "}
-                  failed
+                  down
                 </span>
               </div>
             </div>
@@ -93,11 +100,26 @@ function MonitorHistory({
   days,
   monitorName,
   successRate,
+  lastStatus,
 }: MonitorHistoryProps) {
   return (
     <div className="space-y-2">
-      <div className="flex justify-between">
-        <span className="font-semibold">{monitorName}</span>
+      <div className="flex justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">{monitorName}</span>
+          {lastStatus && lastStatus !== "operational" && (
+            <Badge
+              className={cn("capitalize", {
+                "bg-monitor-status-degraded/20 text-monitor-status-degraded":
+                  lastStatus === "degraded",
+                "bg-monitor-status-down/20 text-monitor-status-down":
+                  lastStatus === "down",
+              })}
+            >
+              {lastStatus}
+            </Badge>
+          )}
+        </div>
         <span className="text-muted-foreground text-sm">
           {successRate.toFixed(2)}%
         </span>

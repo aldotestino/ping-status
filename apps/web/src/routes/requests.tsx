@@ -25,8 +25,8 @@ import { type client, orpc } from "@/lib/orpc";
 export const Route = createFileRoute("/requests")({
   validateSearch: z.object({
     monitorName: z.array(z.string().trim().min(1)).default([]),
-    status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
-    validation: z.array(z.enum(["success", "fail"])).default([]),
+    statusCode: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
+    status: z.array(z.enum(["operational", "degraded", "down"])).default([]),
     incidentId: z.coerce.number().min(0).optional(),
     sort: z
       .object({
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/requests")({
       stripSearchParams({
         monitorName: [],
         status: [],
-        validation: [],
+        statusCode: [],
         sort: {
           field: "createdAt",
           order: "desc",
@@ -50,18 +50,25 @@ export const Route = createFileRoute("/requests")({
   },
   loaderDeps: ({ search }) => search,
   loader: ({ context: { queryClient }, deps }) =>
-    queryClient.ensureInfiniteQueryData(
-      orpc.requests.infiniteOptions({
-        initialPageParam: 1,
-        getNextPageParam: (last) => last.meta.nextPage,
-        getPreviousPageParam: (last) => last.meta.previousPage,
-        input: (pageParam) => ({
-          ...deps,
-          limit: 100,
-          page: pageParam,
-        }),
-      })
-    ),
+    Promise.all([
+      queryClient.ensureInfiniteQueryData(
+        orpc.requests.infiniteOptions({
+          initialPageParam: 1,
+          getNextPageParam: (last) => last.meta.nextPage,
+          getPreviousPageParam: (last) => last.meta.previousPage,
+          input: (pageParam) => ({
+            ...deps,
+            limit: 100,
+            page: pageParam,
+          }),
+        })
+      ),
+      queryClient.ensureQueryData(
+        orpc.monitors.queryOptions({
+          staleTime: Number.POSITIVE_INFINITY,
+        })
+      ),
+    ]),
   component: RouteComponent,
 });
 
@@ -124,7 +131,7 @@ function RouteComponent() {
                 </div>
               </TableHead>
               <TableHead className="border-r text-muted-foreground">
-                Status
+                Status Code
               </TableHead>
               <TableHead className="border-r text-muted-foreground">
                 Method
@@ -144,9 +151,7 @@ function RouteComponent() {
                   <ChevronsUpDown className="size-4" />
                 </div>
               </TableHead>
-              <TableHead className="text-muted-foreground">
-                Validation
-              </TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

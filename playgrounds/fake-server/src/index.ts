@@ -12,7 +12,7 @@ app.use(
     const ms = Number(c.req.query("sleep"));
 
     if (!Number.isNaN(ms)) {
-      await sleep(3000);
+      await sleep(ms);
     }
 
     next();

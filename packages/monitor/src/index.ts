@@ -3,12 +3,31 @@ import { z } from "zod/v4";
 const MIN_STATUS_CODE = 100;
 const MAX_STATUS_CODE = 599;
 
+const MIN_TIMEOUT = 1000; // 1 second
+const MAX_TIMEOUT = 60_000; // 1 minute
+const DEFAULT_TIMEOUT = 20_000; // 20 seconds
+
+const MIN_DEGRADED_THRESHOLD = 10; // 10 ms
+const MAX_DEGRADED_THRESHOLD = MAX_TIMEOUT; // 1 minute
+
 export const monitorSchema = z.object({
   name: z.string().min(1),
   url: z.url(),
   method: z.enum(["GET", "POST", "PUT"]).default("GET"),
   headers: z.record(z.string(), z.string()).optional(),
   body: z.union([z.record(z.string(), z.any()), z.string()]).optional(),
+  timeout: z
+    .number()
+    .min(MIN_TIMEOUT)
+    .max(MAX_TIMEOUT)
+    .default(DEFAULT_TIMEOUT),
+  degradedThreshold: z
+    .number()
+    .min(MIN_DEGRADED_THRESHOLD)
+    .max(MAX_DEGRADED_THRESHOLD)
+    .optional(),
+  maxRetries: z.number().min(0).max(5).default(2),
+  retryDelay: z.number().min(100).max(3000).default(1000),
   validator: z.function({
     input: [
       z.object({
@@ -17,10 +36,15 @@ export const monitorSchema = z.object({
         headers: z.record(z.string(), z.string()),
       }),
     ],
-    output: z.object({
-      success: z.boolean(),
-      message: z.string().optional(),
-    }),
+    output: z.discriminatedUnion("success", [
+      z.object({
+        success: z.literal(true),
+      }),
+      z.object({
+        success: z.literal(false),
+        message: z.string(),
+      }),
+    ]),
   }),
 });
 
@@ -35,16 +59,21 @@ const monitor = (config: MonitorConfig): Monitor => {
 export const monitors = [
   monitor({
     name: "example-monitor",
-    url: "http://host.docker.internal:4000/200",
-    validator: ({ status }) => ({
-      success: status === 200,
-    }),
+    url: "http://localhost:4000/200",
+    timeout: 2500,
+    degradedThreshold: 100,
+    validator: ({ status }) =>
+      status === 200
+        ? { success: true }
+        : { success: false, message: "Status is not 200" },
   }),
   monitor({
     name: "example-monitor-2",
-    url: "http://host.docker.internal:4000/204",
-    validator: ({ status }) => ({
-      success: status === 204,
-    }),
+    url: "http://localhost:4000/204",
+    degradedThreshold: 200,
+    validator: ({ status }) =>
+      status === 204
+        ? { success: true }
+        : { success: false, message: "Status is not 204" },
   }),
 ];

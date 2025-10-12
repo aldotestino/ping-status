@@ -32,7 +32,7 @@ function RequestDetailsItem({
 }) {
   return (
     <div
-      className={cn("flex items-center justify-between gap-4 py-2 text-sm", {
+      className={cn("flex items-center justify-between gap-2 py-2 text-sm", {
         "flex-col items-start": orientation === "vertical",
       })}
     >
@@ -79,14 +79,14 @@ function RequestDetails({ request }: RequestDetailsProps) {
             <span
               className={cn({
                 "text-monitor-status-operational":
-                  request.status >= 200 && request.status < 300,
+                  request.statusCode >= 200 && request.statusCode < 300,
                 "text-monitor-status-degraded":
-                  request.status >= 400 && request.status < 500,
+                  request.statusCode >= 400 && request.statusCode < 500,
                 "text-monitor-status-down":
-                  request.status >= 500 && request.status < 600,
+                  request.statusCode >= 500 && request.statusCode < 600,
               })}
             >
-              {request.status || "-"}
+              {request.statusCode || "-"}
             </span>
           </RequestDetailsItem>
           <RequestDetailsItem label="Method">
@@ -109,26 +109,37 @@ function RequestDetails({ request }: RequestDetailsProps) {
               )}
             </div>
           </RequestDetailsItem>
-          <RequestDetailsItem label="Validation">
+          <RequestDetailsItem label="Status">
             <Badge
-              className={cn({
+              className={cn("capitalize", {
                 "bg-monitor-status-operational/20 text-monitor-status-operational":
-                  request.success,
+                  request.status === "operational",
                 "bg-monitor-status-down/20 text-monitor-status-down":
-                  !request.success,
+                  request.status === "down",
+                "bg-monitor-status-degraded/20 text-monitor-status-degraded":
+                  request.status === "degraded",
               })}
             >
-              {request.success ? "Success" : "Fail"}
+              {request.status}
             </Badge>
           </RequestDetailsItem>
           {request.incidentId && (
             <>
               <RequestDetailsItem label="Incident ID">
-                #{request.incidentId}
+                <div className="space-x-0.5">
+                  <span className="text-muted-foreground">#</span>
+                  <span>{request.incidentId}</span>
+                </div>
               </RequestDetailsItem>
               <RequestDetailsItem label="Message" orientation="vertical">
                 <Item
-                  className="w-full bg-monitor-status-down/20 text-monitor-status-down"
+                  // className="w-full bg-monitor-status-down/20 text-monitor-status-down"
+                  className={cn("w-full", {
+                    "bg-monitor-status-down/20 text-monitor-status-down":
+                      request.status === "down",
+                    "bg-monitor-status-degraded/20 text-monitor-status-degraded":
+                      request.status === "degraded",
+                  })}
                   variant="muted"
                 >
                   <ItemContent className="break-all">

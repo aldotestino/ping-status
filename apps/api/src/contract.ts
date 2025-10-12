@@ -23,7 +23,9 @@ const monitors = oc
     method: "GET",
     path: "/monitors",
   })
-  .output(z.array(monitorSchema.omit({ validator: true })));
+  .output(
+    z.array(monitorSchema.omit({ validator: true, headers: true, body: true }))
+  );
 
 const requests = oc
   .route({
@@ -39,8 +41,8 @@ const requests = oc
   .input(
     z.object({
       monitorName: z.array(z.string().trim().min(1)).default([]),
-      status: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
-      validation: z.array(z.enum(["success", "fail"])).default([]),
+      statusCode: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
+      status: z.array(z.enum(["operational", "degraded", "down"])).default([]),
       incidentId: z.number().min(0).optional(),
       page: z.coerce.number().default(1),
       limit: z.coerce.number().default(10),
@@ -90,8 +92,9 @@ const monitorDetails = oc
       pingResults: z.array(
         z.object({
           date: z.iso.datetime(),
-          success: z.number().min(0),
-          fail: z.number().min(0),
+          operational: z.number().min(0),
+          degraded: z.number().min(0),
+          down: z.number().min(0),
         })
       ),
       pingLatencies: z.array(
@@ -107,11 +110,15 @@ const monitorDetails = oc
           value: z.number().min(0),
           change: z.number(),
         }),
-        fails: z.object({
+        operational: z.object({
           value: z.number().min(0),
           change: z.number(),
         }),
-        success: z.object({
+        degraded: z.object({
+          value: z.number().min(0),
+          change: z.number(),
+        }),
+        down: z.object({
           value: z.number().min(0),
           change: z.number(),
         }),
@@ -141,12 +148,14 @@ const history = oc
     z.array(
       z.object({
         monitorName: monitorSchema.shape.name,
+        lastStatus: pingResultSchema.shape.status.optional(),
         successRate: z.number(),
         days: z.array(
           z.object({
             total: z.number(),
-            success: z.number(),
-            fail: z.number(),
+            operational: z.number(),
+            degraded: z.number(),
+            down: z.number(),
             day: z.iso.datetime(),
             totalDowntime: z.number().optional(),
           })
@@ -159,13 +168,14 @@ const overview = oc
   .route({
     tags: ["monitor"],
     method: "GET",
-    path: "/status",
+    path: "/overview",
   })
   .output(
     z.object({
-      total: z.number(),
-      operational: z.number(),
-      down: z.number(),
+      monitors: z.array(z.string()),
+      operational: z.array(z.string()),
+      degraded: z.array(z.string()),
+      down: z.array(z.string()),
       lastUpdated: z.iso.datetime(),
     })
   );

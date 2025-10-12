@@ -34,16 +34,13 @@ const program = Effect.gen(function* () {
   let openedIncidents: Incident[] = [];
   if (incidentsToOpen.length > 0) {
     openedIncidents = yield* drizzle.query((client) =>
-      client
-        .insert(incident)
-        .values(incidentsToOpen.map((name) => ({ monitorName: name })))
-        .returning()
+      client.insert(incident).values(incidentsToOpen).returning()
     );
 
     yield* Console.log(`opened ${openedIncidents.length} incidents`);
 
     // send notification
-    notifier.notifyOpenIncidents(
+    yield* notifier.notifyOpenIncidents(
       openedIncidents.map((i) => {
         // biome-ignore lint/style/noNonNullAssertion: is there 100%
         const ping = pings.find((p) => p.monitorName === i.monitorName)!;
@@ -51,7 +48,7 @@ const program = Effect.gen(function* () {
         return {
           ...i,
           message: ping.message,
-          status: ping.status,
+          statusCode: ping.statusCode,
           responseTime: ping.responseTime,
         };
       })
@@ -72,8 +69,15 @@ const program = Effect.gen(function* () {
 
     yield* Console.log(`closed ${closed.length} incidents`);
 
-    // send notification
-    notifier.notifyClosedIncidents(closed);
+    // from closed incidents, filter out the monitor names that are included in the new opened (incident escalated or de-escaleted)
+    const closedIncidentsToNotify = closed.filter(
+      (i) => !openedIncidents.some((o) => o.monitorName === i.monitorName)
+    );
+
+    if (closedIncidentsToNotify.length > 0) {
+      // send notification
+      yield* notifier.notifyClosedIncidents(closedIncidentsToNotify);
+    }
   }
 
   const newCurrentOpenIncidents = currentOpenIncidents
