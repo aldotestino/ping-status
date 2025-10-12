@@ -1,4 +1,4 @@
-import { endOfDay, format, startOfDay, subDays } from "date-fns";
+import { endOfDay, format, startOfDay, subDays, subHours } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -79,11 +79,23 @@ function TimeRangePresets({
   onSelect: (dateRange: { from: Date; to: Date }) => void;
 }) {
   const handleSelectPreset = (
-    preset: "today" | "yesterday" | "last7Days" | "last14Days" | "last30Days"
+    preset:
+      | "lastHour"
+      | "today"
+      | "yesterday"
+      | "last7Days"
+      | "last14Days"
+      | "last30Days"
   ) => {
     const now = new Date();
 
     switch (preset) {
+      case "lastHour":
+        onSelect({
+          from: subHours(now, 1),
+          to: now,
+        });
+        break;
       case "today":
         onSelect({
           from: startOfDay(now),
@@ -120,6 +132,7 @@ function TimeRangePresets({
   };
 
   useHotKeys([
+    { key: "h", callback: () => handleSelectPreset("lastHour") },
     { key: "t", callback: () => handleSelectPreset("today") },
     { key: "y", callback: () => handleSelectPreset("yesterday") },
     { key: "w", callback: () => handleSelectPreset("last7Days") },
@@ -131,6 +144,14 @@ function TimeRangePresets({
     <div className="space-y-2 p-3">
       <Label className="text-muted-foreground uppercase">Date Range</Label>
       <div className="flex flex-col gap-px">
+        <Button
+          className="w-full justify-between gap-4"
+          onClick={() => handleSelectPreset("lastHour")}
+          variant="ghost"
+        >
+          Last hour
+          <Kbd>H</Kbd>
+        </Button>
         <Button
           className="w-full justify-between gap-4"
           onClick={() => handleSelectPreset("today")}
