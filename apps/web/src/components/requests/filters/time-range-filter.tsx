@@ -73,125 +73,110 @@ function TimeRangeFilter({
 
 export default TimeRangeFilter;
 
+const presets = {
+  lastHour: {
+    name: "Last hour",
+    value: "lastHour",
+    shortcut: "h",
+    apply: () => {
+      const now = new Date();
+      return {
+        from: subHours(now, 1),
+        to: now,
+      };
+    },
+  },
+  today: {
+    name: "Today",
+    value: "today",
+    shortcut: "t",
+    apply: () => {
+      const now = new Date();
+      return {
+        from: startOfDay(now),
+        to: endOfDay(now),
+      };
+    },
+  },
+  yesterday: {
+    name: "Yesterday",
+    value: "yesterday",
+    shortcut: "y",
+    apply: () => {
+      const now = new Date();
+      return {
+        from: startOfDay(subDays(now, 1)),
+        to: endOfDay(subDays(now, 1)),
+      };
+    },
+  },
+  last7Days: {
+    name: "Last 7 days",
+    value: "last7Days",
+    shortcut: "w",
+    apply: () => {
+      const now = new Date();
+      return {
+        from: subDays(startOfDay(now), 6),
+        to: endOfDay(now),
+      };
+    },
+  },
+  last14Days: {
+    name: "Last 14 days",
+    value: "last14Days",
+    shortcut: "b",
+    apply: () => {
+      const now = new Date();
+      return {
+        from: subDays(startOfDay(now), 13),
+        to: endOfDay(now),
+      };
+    },
+  },
+  last30Days: {
+    name: "Last 30 days",
+    value: "last30Days",
+    shortcut: "m",
+    apply: () => {
+      const now = new Date();
+      return {
+        from: subDays(startOfDay(now), 29),
+        to: endOfDay(now),
+      };
+    },
+  },
+};
+
 function TimeRangePresets({
   onSelect,
 }: {
   onSelect: (dateRange: { from: Date; to: Date }) => void;
 }) {
-  const handleSelectPreset = (
-    preset:
-      | "lastHour"
-      | "today"
-      | "yesterday"
-      | "last7Days"
-      | "last14Days"
-      | "last30Days"
-  ) => {
-    const now = new Date();
-
-    switch (preset) {
-      case "lastHour":
-        onSelect({
-          from: subHours(now, 1),
-          to: now,
-        });
-        break;
-      case "today":
-        onSelect({
-          from: startOfDay(now),
-          to: endOfDay(now),
-        });
-        break;
-      case "yesterday":
-        onSelect({
-          from: startOfDay(subDays(now, 1)),
-          to: endOfDay(subDays(now, 1)),
-        });
-        break;
-      case "last7Days":
-        onSelect({
-          from: subDays(startOfDay(now), 6),
-          to: endOfDay(now),
-        });
-        break;
-      case "last14Days":
-        onSelect({
-          from: subDays(startOfDay(now), 13),
-          to: endOfDay(now),
-        });
-        break;
-      case "last30Days":
-        onSelect({
-          from: subDays(startOfDay(now), 29),
-          to: endOfDay(now),
-        });
-        break;
-      default:
-        break;
-    }
-  };
-
   useHotKeys([
-    { key: "h", callback: () => handleSelectPreset("lastHour") },
-    { key: "t", callback: () => handleSelectPreset("today") },
-    { key: "y", callback: () => handleSelectPreset("yesterday") },
-    { key: "w", callback: () => handleSelectPreset("last7Days") },
-    { key: "b", callback: () => handleSelectPreset("last14Days") },
-    { key: "m", callback: () => handleSelectPreset("last30Days") },
+    { key: "h", callback: () => onSelect(presets.lastHour.apply()) },
+    { key: "t", callback: () => onSelect(presets.today.apply()) },
+    { key: "y", callback: () => onSelect(presets.yesterday.apply()) },
+    { key: "w", callback: () => onSelect(presets.last7Days.apply()) },
+    { key: "b", callback: () => onSelect(presets.last14Days.apply()) },
+    { key: "m", callback: () => onSelect(presets.last30Days.apply()) },
   ]);
 
   return (
     <div className="space-y-2 p-3">
       <Label className="text-muted-foreground uppercase">Date Range</Label>
       <div className="flex flex-col gap-px">
-        <Button
-          className="w-full justify-between gap-4"
-          onClick={() => handleSelectPreset("lastHour")}
-          variant="ghost"
-        >
-          Last hour
-          <Kbd>H</Kbd>
-        </Button>
-        <Button
-          className="w-full justify-between gap-4"
-          onClick={() => handleSelectPreset("today")}
-          variant="ghost"
-        >
-          Today
-          <Kbd>T</Kbd>
-        </Button>
-        <Button
-          className="w-full justify-between gap-4"
-          onClick={() => handleSelectPreset("yesterday")}
-          variant="ghost"
-        >
-          Yesterday
-          <Kbd>Y</Kbd>
-        </Button>
-        <Button
-          className="w-full justify-between gap-4"
-          onClick={() => handleSelectPreset("last7Days")}
-          variant="ghost"
-        >
-          Last 7 days
-          <Kbd>W</Kbd>
-        </Button>
-        <Button
-          className="w-full justify-between gap-4"
-          onClick={() => handleSelectPreset("last14Days")}
-          variant="ghost"
-        >
-          Last 14 days
-          <Kbd>B</Kbd>
-        </Button>
-        <Button
-          className="w-full justify-between gap-4"
-          onClick={() => handleSelectPreset("last30Days")}
-          variant="ghost"
-        >
-          Last 30 days
-          <Kbd>M</Kbd>
-        </Button>
+        {Object.values(presets).map((preset) => (
+          <Button
+            className="w-full justify-between gap-4"
+            key={preset.value}
+            onClick={() => onSelect(preset.apply())}
+            variant="ghost"
+          >
+            {preset.name}
+            <Kbd>{preset.shortcut}</Kbd>
+          </Button>
+        ))}
       </div>
     </div>
   );
@@ -242,7 +227,6 @@ function CustomTimeRange({
               <Input
                 className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                 defaultValue={toInputFormat(timeRange.from)}
-                disabled={!timeRange.from}
                 key={toInputFormat(timeRange.from)}
                 onChange={(e) => {
                   const date = new Date(e.target.value);
@@ -256,7 +240,6 @@ function CustomTimeRange({
               <Input
                 className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                 defaultValue={toInputFormat(timeRange.to)}
-                disabled={!timeRange.to}
                 key={toInputFormat(timeRange.to)}
                 onChange={(e) => {
                   const date = new Date(e.target.value);
