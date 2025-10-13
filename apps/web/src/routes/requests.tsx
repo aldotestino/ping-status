@@ -7,9 +7,9 @@ import {
 import { ChevronsUpDown, Loader } from "lucide-react";
 import { useState } from "react";
 import z from "zod/v4";
-import RequestDetails from "@/components/request-details";
-import RequestRow from "@/components/request-row";
-import RequestsFilters from "@/components/requests-filters";
+import RequestDetails from "@/components/requests/request-details";
+import RequestRow from "@/components/requests/request-row";
+import RequestsFilters from "@/components/requests/requests-filters";
 import ThemeToggle from "@/components/theme-toggle";
 import { Sheet } from "@/components/ui/sheet";
 import {
@@ -28,6 +28,8 @@ export const Route = createFileRoute("/requests")({
     statusCode: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
     status: z.array(z.enum(["operational", "degraded", "down"])).default([]),
     incidentId: z.coerce.number().min(0).optional(),
+    from: z.int().min(0).optional(),
+    to: z.int().min(0).optional(),
     sort: z
       .object({
         field: z.enum(["createdAt", "responseTime"]).default("createdAt"),
@@ -111,7 +113,7 @@ function RouteComponent() {
             </Link>
             <ThemeToggle />
           </div>
-          <div className="overflow-y-auto pt-0">
+          <div className="overflow-y-auto py-2">
             <RequestsFilters />
           </div>
         </div>

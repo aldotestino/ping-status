@@ -40,6 +40,8 @@ const requests = oc
   })
   .input(
     z.object({
+      from: z.int().min(0).optional(),
+      to: z.int().min(0).optional(),
       monitorName: z.array(z.string().trim().min(1)).default([]),
       statusCode: z.array(z.enum(["2xx", "4xx", "5xx"])).default([]),
       status: z.array(z.enum(["operational", "degraded", "down"])).default([]),

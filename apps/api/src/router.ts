@@ -634,11 +634,21 @@ export const requests = router.requests.handler(async ({ input, errors }) => {
     ? eq(pingResult.incidentId, input.incidentId)
     : undefined;
 
+  const fromCondition = input.from
+    ? gte(pingResult.createdAt, new Date(input.from))
+    : undefined;
+
+  const toCondition = input.to
+    ? lt(pingResult.createdAt, new Date(input.to))
+    : undefined;
+
   const where = and(
     monitorNameCondition,
     statusCodeCondition,
     statusCondition,
-    incidentIdCondition
+    incidentIdCondition,
+    fromCondition,
+    toCondition
   );
 
   const [t] = await db
