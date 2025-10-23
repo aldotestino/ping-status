@@ -32,8 +32,8 @@ function formatOpenIncidentsMessage(incidents: OpenIncident[]) {
       {
         type: "section",
         text: {
-          type: "mrkdown",
-          text: table(tableData),
+          type: "mrkdwn",
+          text: `\`\`\`${table(tableData)}\`\`\``,
         },
       },
     ],
@@ -63,8 +63,8 @@ function formatClosedIncidentsMessage(incidents: Incident[]) {
       {
         type: "section",
         text: {
-          type: "mrkdown",
-          text: table(tableData),
+          type: "mrkdwn",
+          text: `\`\`\`${table(tableData)}\`\`\``,
         },
       },
     ],
@@ -84,6 +84,8 @@ export class Notifier extends Effect.Service<Notifier>()("Notifier", {
           )
         ),
         Effect.tap((res) => Console.log(`Notification sent: ${res.status}`)),
+        Effect.andThen((res) => res.text),
+        Effect.tap((res) => Console.log(`Notification sent: ${res}`)),
         Effect.tapError((err) =>
           Console.warn(`Failed to notify: ${err.message}`)
         ),
