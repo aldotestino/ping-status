@@ -1,10 +1,5 @@
-import { relations } from "drizzle-orm";
-import {
-  index,
-  integer,
-  sqliteTable,
-  text,
-} from "drizzle-orm/sqlite-core";
+import { relations, sql } from "drizzle-orm";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createSelectSchema } from "drizzle-zod";
 import type { z } from "zod";
 
@@ -22,11 +17,13 @@ export const pingResult = sqliteTable(
   {
     id: integer().primaryKey({ autoIncrement: true }),
     monitorName: text().notNull(),
-    status: text().$type<typeof pingStatusValues[number]>().notNull(),
+    status: text().$type<(typeof pingStatusValues)[number]>().notNull(),
     message: text(),
     responseTime: integer().notNull(),
     statusCode: integer().notNull(),
-    createdAt: integer({ mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
     incidentId: integer().references(() => incident.id),
   },
   (table) => [index("pingResult_monitorName_idx").on(table.monitorName)]
@@ -46,8 +43,10 @@ export const incident = sqliteTable(
   {
     id: integer().primaryKey({ autoIncrement: true }),
     monitorName: text().notNull(),
-    type: text().$type<typeof incidentTypeValues[number]>().notNull(),
-    openedAt: integer({ mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+    type: text().$type<(typeof incidentTypeValues)[number]>().notNull(),
+    openedAt: integer({ mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
     closedAt: integer({ mode: "timestamp" }),
   },
   (table) => [index("incident_monitorName_idx").on(table.monitorName)]
