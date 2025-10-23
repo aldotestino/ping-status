@@ -4,7 +4,7 @@ import { type Incident, incident, pingResult } from "@ping-status/db/schema";
 import { env } from "@ping-status/env";
 import { monitors } from "@ping-status/monitor";
 import { and, inArray, isNull } from "drizzle-orm";
-import { Console, Duration, Effect, Schedule } from "effect";
+import { Console, Duration, Effect, Layer, Option, Schedule } from "effect";
 import { DrizzleWrapper } from "@/services/drizzle-wrapper";
 import { MonitorPinger } from "@/services/monitor-pinger";
 import { MonitorProcessor } from "@/services/monitor-processor";
@@ -14,7 +14,9 @@ import { getIncidentOperations, linkPingsWithIncidents } from "@/utils";
 const program = Effect.gen(function* () {
   const monitorProcessor = yield* MonitorProcessor;
   const drizzle = yield* DrizzleWrapper;
-  const notifier = yield* Notifier;
+  const notifier = yield* Effect.serviceOption(Notifier);
+
+  yield* Console.log("notifier is provided:", Option.isSome(notifier));
 
   const pings = yield* Effect.all(monitors.map(monitorProcessor.process), {
     concurrency: env.MONITOR_CONCURRENCY,
@@ -40,19 +42,21 @@ const program = Effect.gen(function* () {
     yield* Console.log(`opened ${openedIncidents.length} incidents`);
 
     // send notification
-    yield* notifier.notifyOpenIncidents(
-      openedIncidents.map((i) => {
-        // biome-ignore lint/style/noNonNullAssertion: is there 100%
-        const ping = pings.find((p) => p.monitorName === i.monitorName)!;
+    if (Option.isSome(notifier)) {
+      yield* notifier.value.notifyOpenIncidents(
+        openedIncidents.map((i) => {
+          // biome-ignore lint/style/noNonNullAssertion: is there 100%
+          const ping = pings.find((p) => p.monitorName === i.monitorName)!;
 
-        return {
-          ...i,
-          message: ping.message,
-          statusCode: ping.statusCode,
-          responseTime: ping.responseTime,
-        };
-      })
-    );
+          return {
+            ...i,
+            message: ping.message,
+            statusCode: ping.statusCode,
+            responseTime: ping.responseTime,
+          };
+        })
+      );
+    }
   }
 
   // close incidents
@@ -74,9 +78,9 @@ const program = Effect.gen(function* () {
       (i) => !openedIncidents.some((o) => o.monitorName === i.monitorName)
     );
 
-    if (closedIncidentsToNotify.length > 0) {
+    if (closedIncidentsToNotify.length > 0 && Option.isSome(notifier)) {
       // send notification
-      yield* notifier.notifyClosedIncidents(closedIncidentsToNotify);
+      yield* notifier.value.notifyClosedIncidents(closedIncidentsToNotify);
     }
   }
 
@@ -99,7 +103,7 @@ const program = Effect.gen(function* () {
 
 // do not catch database errors as they represent defects
 const main = program.pipe(
-  Effect.provide(Notifier.Default),
+  Effect.provide(env.SLACK_WEBHOOK_URL ? Notifier.Default : Layer.empty),
   Effect.provide(DrizzleWrapper.Default),
   Effect.provide(MonitorProcessor.Default),
   Effect.provide(MonitorPinger.Default),
