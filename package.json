@@ -11,6 +11,7 @@
     "build": "bun run --cwd apps/web build",
     "start:app": "bun run --cwd apps/api start",
     "start:pinger": "bun run --cwd apps/pinger start",
+    "start:standalone": "./infra/start-standalone.sh",
     "db:generate": "bun run --cwd packages/db db:generate",
     "db:migrate": "bun run --cwd packages/db db:migrate",
     "db:push": "bun run --cwd packages/db db:push",

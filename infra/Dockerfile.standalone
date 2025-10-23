@@ -1,0 +1,27 @@
+FROM oven/bun:1.2.23
+
+WORKDIR /app
+
+COPY package.json bun.lock ./
+COPY tsconfig*.json ./
+
+COPY packages/ ./packages/
+COPY apps/api/ ./apps/api/
+COPY apps/web/ ./apps/web/
+COPY apps/pinger/ ./apps/pinger/
+
+RUN bun install
+
+RUN bun run build
+
+# Create data directory for SQLite database
+RUN mkdir -p /app/data
+
+# Copy startup script
+COPY infra/start-standalone.sh ./start-standalone.sh
+RUN chmod +x ./start-standalone.sh
+
+EXPOSE 3000
+
+CMD ["./start-standalone.sh"]
+
