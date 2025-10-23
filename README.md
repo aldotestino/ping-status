@@ -33,9 +33,6 @@ This branch (`standalone`) provides a single-container deployment that runs both
 Create a `.env` file in the root directory:
 
 ```env
-# Optional: Custom database path (defaults to ./data/ping-status.db)
-DATABASE_URL=/app/data/ping-status.db
-
 # Monitor configuration
 MONITOR_INTERVAL_MINUTES=1
 MONITOR_CONCURRENCY=5
@@ -100,7 +97,7 @@ bun run start:standalone
 
 ### Database
 
-The application uses SQLite for data persistence. The database file is stored in the `data/` directory by default.
+The application uses SQLite for data persistence. The database file (`ping-status.db`) is stored in the application's working directory.
 
 To view/edit the database directly:
 

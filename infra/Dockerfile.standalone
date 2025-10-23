@@ -14,9 +14,6 @@ RUN bun install
 
 RUN bun run build
 
-# Create data directory for SQLite database
-RUN mkdir -p /app/data
-
 # Copy startup script
 COPY infra/start-standalone.sh ./start-standalone.sh
 RUN chmod +x ./start-standalone.sh

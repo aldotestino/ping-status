@@ -4,14 +4,6 @@ set -e
 
 echo "Starting standalone ping-status service..."
 
-# Set environment variables for SQLite
-export DATABASE_URL="${DATABASE_URL:-/app/data/ping-status.db}"
-
-echo "Database location: $DATABASE_URL"
-
-# Ensure database directory exists
-mkdir -p "$(dirname "$DATABASE_URL")"
-
 # Run database migrations
 echo "Running database migrations..."
 cd /app/packages/db
