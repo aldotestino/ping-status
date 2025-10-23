@@ -1,12 +1,11 @@
-import { env } from "@ping-status/env";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   out: "./drizzle",
   schema: "./src/schema.ts",
-  dialect: "postgresql",
+  dialect: "sqlite",
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url: process.env.DATABASE_URL || "./data/ping-status.db",
   },
   verbose: true,
 });

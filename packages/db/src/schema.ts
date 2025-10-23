@@ -2,33 +2,31 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
-  pgEnum,
-  pgTable,
+  sqliteTable,
   text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/sqlite-core";
 import { createSelectSchema } from "drizzle-zod";
 import type { z } from "zod";
 
-export const pingStatus = pgEnum("status", ["operational", "degraded", "down"]);
-
-export const incidentType = pgEnum("type", ["degraded", "down"]);
+// SQLite doesn't have enums, so we use text with check constraints
+export const pingStatusValues = ["operational", "degraded", "down"] as const;
+export const incidentTypeValues = ["degraded", "down"] as const;
 
 // success = passed validation
 // degraded = passed validation but response time is above degraded threshold
 // failed = validation failed (or cannot connect)
 // timeout = connection timed out
 
-export const pingResult = pgTable(
+export const pingResult = sqliteTable(
   "pingResult",
   {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    id: integer().primaryKey({ autoIncrement: true }),
     monitorName: text().notNull(),
-    status: pingStatus().notNull(),
+    status: text().$type<typeof pingStatusValues[number]>().notNull(),
     message: text(),
     responseTime: integer().notNull(),
     statusCode: integer().notNull(),
-    createdAt: timestamp().notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
     incidentId: integer().references(() => incident.id),
   },
   (table) => [index("pingResult_monitorName_idx").on(table.monitorName)]
@@ -43,14 +41,14 @@ export const insertPingResultSchema = pingResultSchema.omit({
 export type InsertPingResult = z.infer<typeof insertPingResultSchema>;
 export type PingResult = z.infer<typeof pingResultSchema>;
 
-export const incident = pgTable(
+export const incident = sqliteTable(
   "incident",
   {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    id: integer().primaryKey({ autoIncrement: true }),
     monitorName: text().notNull(),
-    type: incidentType().notNull(),
-    openedAt: timestamp().notNull().defaultNow(),
-    closedAt: timestamp(),
+    type: text().$type<typeof incidentTypeValues[number]>().notNull(),
+    openedAt: integer({ mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+    closedAt: integer({ mode: "timestamp" }),
   },
   (table) => [index("incident_monitorName_idx").on(table.monitorName)]
 );
