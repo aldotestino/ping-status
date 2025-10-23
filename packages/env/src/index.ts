@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  DATABASE_URL: z.url(),
+  DATABASE_URL: z.string().default("./data/ping-status.db"),
   MONITOR_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(120).default(1),
   MONITOR_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(5),
   SLACK_WEBHOOK_URL: z.url().optional(),

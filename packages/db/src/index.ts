@@ -1,12 +1,13 @@
 import { env } from "@ping-status/env";
-import { drizzle } from "drizzle-orm/node-postgres";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import {
   incident,
   incidentRelations,
-  incidentType,
   pingResult,
   pingResultRelations,
-  pingStatus,
 } from "./schema";
 
 const schema = {
@@ -14,10 +15,16 @@ const schema = {
   incident,
   pingResultRelations,
   incidentRelations,
-  pingStatus,
-  incidentType,
 };
 
-const db = drizzle(env.DATABASE_URL, { schema });
+// Ensure the database directory exists
+const dbPath = env.DATABASE_URL;
+const dbDir = dirname(dbPath);
+if (!existsSync(dbDir)) {
+  mkdirSync(dbDir, { recursive: true });
+}
+
+const sqlite = new Database(dbPath);
+const db = drizzle(sqlite, { schema });
 
 export { db };
