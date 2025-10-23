@@ -1,8 +1,8 @@
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { env } from "@ping-status/env";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { existsSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
 import {
   incident,
   incidentRelations,
