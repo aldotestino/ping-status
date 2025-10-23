@@ -14,7 +14,7 @@ A monitoring service that pings configured endpoints and tracks their status ove
 ## Technology Stack
 
 - **Runtime**: [Bun](https://bun.com) - Fast all-in-one JavaScript runtime
-- **Database**: SQLite (via better-sqlite3)
+- **Database**: SQLite (via bun:sqlite)
 - **ORM**: Drizzle ORM
 - **API**: Hono + oRPC
 - **Frontend**: React + TanStack Query + TanStack Router
