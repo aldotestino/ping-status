@@ -20,23 +20,9 @@ import {
   sql,
 } from "drizzle-orm";
 import contract from "./contract";
+import { calculatePercentageChange, calculatePercentile } from "./utils";
 
 const router = implement(contract);
-
-function calculatePercentile(values: number[], percentile: number) {
-  if (values.length === 0) {
-    return 0;
-  }
-
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = (percentile / 100) * (sorted.length - 1);
-  const lower = Math.floor(index);
-  const upper = Math.ceil(index);
-  const weight = index - lower;
-  const lowerValue = sorted[lower] ?? 0;
-  const upperValue = sorted[upper] ?? 0;
-  return Math.round(lowerValue * (1 - weight) + upperValue * weight);
-}
 
 const health = router.health.handler(() => ({
   name: "ping-status",
@@ -245,14 +231,9 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
     .select({
       monitorName: pingResult.monitorName,
       date: sql<string>`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`,
-      responseTimes: sql<
-        number[]
-      >`group_concat(${pingResult.responseTime})`.mapWith((v) =>
-        v.split(",").map(Number)
+      p95: sql<number>`group_concat(${pingResult.responseTime})`.mapWith((v) =>
+        calculatePercentile(v.split(",").map(Number), 95)
       ),
-      // p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-      //   (v) => Math.round(v)
-      // ),
     })
     .from(pingResult)
     .where(
@@ -281,7 +262,7 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
     latencies:
       latenciesByMonitor[name]?.map((l) => ({
         date: l.date,
-        p95: calculatePercentile(l.responseTimes, 95),
+        p95: l.p95,
       })) || [],
   }));
 });
@@ -407,14 +388,6 @@ const statusBadge = router.statusBadge.handler(async ({ input, errors }) => {
   };
 });
 
-function calculatePercentageChange(current: number, previous: number) {
-  if (!previous || previous === 0) {
-    return 0;
-  }
-
-  return ((current - previous) / previous) * 100;
-}
-
 const monitorDetails = router.monitorDetails.handler(
   async ({ input, errors }) => {
     const found = monitorsArray.find((m) => m.name === input.monitorName);
@@ -443,14 +416,14 @@ const monitorDetails = router.monitorDetails.handler(
           Number
         ),
         lastTimestamp: max(pingResult.createdAt),
-        p50: sql`percentile_cont(0.50) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-          (v) => Math.round(v)
+        p50: sql<number>`group_concat(${pingResult.responseTime})`.mapWith(
+          (v) => calculatePercentile(v.split(",").map(Number), 50)
         ),
-        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-          (v) => Math.round(v)
+        p95: sql<number>`group_concat(${pingResult.responseTime})`.mapWith(
+          (v) => calculatePercentile(v.split(",").map(Number), 95)
         ),
-        p99: sql`percentile_cont(0.99) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-          (v) => Math.round(v)
+        p99: sql<number>`group_concat(${pingResult.responseTime})`.mapWith(
+          (v) => calculatePercentile(v.split(",").map(Number), 99)
         ),
       })
       .from(pingResult)
@@ -486,14 +459,14 @@ const monitorDetails = router.monitorDetails.handler(
         down: sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'down' THEN 1 END)`.mapWith(
           Number
         ),
-        p50: sql`percentile_cont(0.50) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-          (v) => Math.round(v)
+        p50: sql<number>`group_concat(${pingResult.responseTime})`.mapWith(
+          (v) => calculatePercentile(v.split(",").map(Number), 50)
         ),
-        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-          (v) => Math.round(v)
+        p95: sql<number>`group_concat(${pingResult.responseTime})`.mapWith(
+          (v) => calculatePercentile(v.split(",").map(Number), 95)
         ),
-        p99: sql`percentile_cont(0.99) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-          (v) => Math.round(v)
+        p99: sql<number>`group_concat(${pingResult.responseTime})`.mapWith(
+          (v) => calculatePercentile(v.split(",").map(Number), 99)
         ),
       })
       .from(pingResult)
@@ -516,9 +489,7 @@ const monitorDetails = router.monitorDetails.handler(
 
     const pingResultsByHour = await db
       .select({
-        date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
-          (v) => new Date(v).toISOString()
-        ),
+        date: sql<string>`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`,
         operational:
           sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'operational' THEN 1 END)`.mapWith(
             Number
@@ -538,16 +509,18 @@ const monitorDetails = router.monitorDetails.handler(
           eq(pingResult.monitorName, input.monitorName)
         )
       )
-      .groupBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`)
-      .orderBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`);
+      .groupBy(
+        sql`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`
+      )
+      .orderBy(
+        sql`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`
+      );
 
     const pingLatenciesByHour = await db
       .select({
-        date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
-          (v) => new Date(v).toISOString()
-        ),
-        p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-          (v) => Math.round(v)
+        date: sql<string>`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`,
+        p95: sql<number>`group_concat(${pingResult.responseTime})`.mapWith(
+          (v) => calculatePercentile(v.split(",").map(Number), 95)
         ),
       })
       .from(pingResult)
@@ -557,8 +530,12 @@ const monitorDetails = router.monitorDetails.handler(
           eq(pingResult.monitorName, input.monitorName)
         )
       )
-      .groupBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`)
-      .orderBy(sql`DATE_TRUNC('hour', ${pingResult.createdAt})`);
+      .groupBy(
+        sql`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`
+      )
+      .orderBy(
+        sql`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`
+      );
 
     return {
       monitor,
