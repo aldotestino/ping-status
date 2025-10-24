@@ -16,6 +16,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@ping-status/env": "workspace:*",
     "@ping-status/db": "workspace:*",
     "@orpc/contract": "^1.9.2",
     "@orpc/openapi": "^1.9.2",

@@ -1,0 +1,31 @@
+FROM oven/bun:1.2.23
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package.json bun.lock ./
+COPY tsconfig*.json ./
+
+COPY packages/ ./packages/
+COPY apps/api/ ./apps/api/
+COPY apps/web/ ./apps/web/
+COPY apps/pinger/ ./apps/pinger/
+
+RUN bun install
+
+RUN bun run build
+
+# Install PM2 globally
+RUN bun install -g pm2
+
+# Create logs directory for PM2
+RUN mkdir -p /app/logs
+
+COPY infra/start.sh ./start.sh
+COPY infra/ecosystem.config.cjs ./ecosystem.config.cjs
+RUN chmod +x start.sh
+
+CMD ["./start.sh"]

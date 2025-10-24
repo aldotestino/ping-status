@@ -58,22 +58,13 @@ const monitor = (config: MonitorConfig): Monitor => {
 
 export const monitors = [
   monitor({
-    name: "example-monitor",
-    url: "http://localhost:4000/200",
-    timeout: 2500,
-    degradedThreshold: 100,
+    timeout: 1000,
+    degradedThreshold: 500,
+    name: "API Health",
+    url: "https://app.usealbatross.ai/api/health",
     validator: ({ status }) =>
       status === 200
         ? { success: true }
-        : { success: false, message: "Status is not 200" },
-  }),
-  monitor({
-    name: "example-monitor-2",
-    url: "http://localhost:4000/204",
-    degradedThreshold: 200,
-    validator: ({ status }) =>
-      status === 204
-        ? { success: true }
-        : { success: false, message: "Status is not 204" },
+        : { success: false, message: "Status code is not 200" },
   }),
 ];

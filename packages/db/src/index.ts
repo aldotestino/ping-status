@@ -1,12 +1,11 @@
+import { Database } from "bun:sqlite";
 import { env } from "@ping-status/env";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle } from "drizzle-orm/bun-sqlite";
 import {
   incident,
   incidentRelations,
-  incidentType,
   pingResult,
   pingResultRelations,
-  pingStatus,
 } from "./schema";
 
 const schema = {
@@ -14,10 +13,9 @@ const schema = {
   incident,
   pingResultRelations,
   incidentRelations,
-  pingStatus,
-  incidentType,
 };
 
-const db = drizzle(env.DATABASE_URL, { schema });
+const sqlite = new Database(env.DATABASE_PATH);
+const db = drizzle(sqlite, { schema });
 
 export { db };

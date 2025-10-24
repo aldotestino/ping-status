@@ -34,8 +34,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 
 # DB
-drizzl
+drizzle
 data
+ping-status.db
 
 # build
 public

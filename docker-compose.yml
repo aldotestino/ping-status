@@ -1,32 +1,13 @@
 services:
 
-  pinger:
+  standalone:
     build:
       context: .
-      dockerfile: infra/Dockerfile.pinger
-    env_file:
-      - .env
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ping-status
-
-  app:
-    build:
-      context: .
-      dockerfile: infra/Dockerfile.app
+      dockerfile: infra/Dockerfile.standalone
     ports:
       - 8080:3000
-    env_file:
-      - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ping-status
-
-  db:
-    image: postgres:16
-    ports:
-      - 5432:5432
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ping-status
+      # DO NOT set MONITOR_INTERVAL_MINUTES - PM2 cron handles scheduling
+      - DATABASE_PATH=/app/data/ping-status.db
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - ./data:/app/data
