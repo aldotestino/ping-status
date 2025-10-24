@@ -14,6 +14,7 @@ A monitoring service that pings configured endpoints and tracks their status ove
 ## Technology Stack
 
 - **Runtime**: [Bun](https://bun.com) - Fast all-in-one JavaScript runtime
+- **Process Manager**: PM2 - Production process manager with load balancing
 - **Database**: SQLite (via bun:sqlite)
 - **ORM**: Drizzle ORM
 - **API**: Hono + oRPC
@@ -51,6 +52,33 @@ docker-compose up --build standalone
 
 The service will be available at `http://localhost:8080`
 
+The container automatically:
+- Runs database migrations on startup
+- Manages both API and pinger services with PM2
+- Restarts services automatically on crashes
+- Maintains logs in `/app/logs/` directory
+
+#### Accessing Logs
+
+View PM2 process status:
+
+```bash
+docker exec -it <container-name> pm2 status
+```
+
+View logs:
+
+```bash
+docker exec -it <container-name> pm2 logs
+```
+
+View specific service logs:
+
+```bash
+docker exec -it <container-name> pm2 logs api
+docker exec -it <container-name> pm2 logs pinger
+```
+
 ### Local Development
 
 Install dependencies:
@@ -59,7 +87,7 @@ Install dependencies:
 bun install
 ```
 
-Generate database migrations:
+Generate database migrations (after schema changes):
 
 ```bash
 bun run db:generate
@@ -70,6 +98,8 @@ Run database migrations:
 ```bash
 bun run db:migrate
 ```
+
+**Note**: In Docker, migrations run automatically on container startup.
 
 Run the pinger service (in one terminal):
 
@@ -87,12 +117,6 @@ Run the web development server (in another terminal):
 
 ```bash
 bun run web
-```
-
-Or run both services together:
-
-```bash
-bun run start:standalone
 ```
 
 ### Database

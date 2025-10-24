@@ -10,14 +10,5 @@ cd /app/packages/db
 bun run drizzle-kit migrate
 cd /app
 
-echo "Starting pinger service in background..."
-bun run start:pinger &
-PINGER_PID=$!
-
-echo "Starting API server..."
-bun run start:app &
-APP_PID=$!
-
-# Wait for both processes
-wait $PINGER_PID $APP_PID
-
+echo "Starting services with PM2..."
+pm2-runtime start /app/ecosystem.config.cjs
