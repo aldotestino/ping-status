@@ -23,6 +23,21 @@ import contract from "./contract";
 
 const router = implement(contract);
 
+function calculatePercentile(values: number[], percentile: number) {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = (percentile / 100) * (sorted.length - 1);
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  const weight = index - lower;
+  const lowerValue = sorted[lower] ?? 0;
+  const upperValue = sorted[upper] ?? 0;
+  return Math.round(lowerValue * (1 - weight) + upperValue * weight);
+}
+
 const health = router.health.handler(() => ({
   name: "ping-status",
   version: "1.0.0",
@@ -44,7 +59,7 @@ const history = router.history.handler(async () => {
   const dailyStats = await db
     .select({
       monitorName: pingResult.monitorName,
-      day: sql<string>`DATE(${pingResult.createdAt})`,
+      day: sql<string>`date(pingResult.createdAt, 'unixepoch')`,
       total: count(),
       operational:
         sql<number>`COUNT(CASE WHEN ${pingResult.status} = 'operational' THEN 1 END)`.mapWith(
@@ -65,8 +80,14 @@ const history = router.history.handler(async () => {
         gte(pingResult.createdAt, startOfPeriod)
       )
     )
-    .groupBy(pingResult.monitorName, sql`DATE(${pingResult.createdAt})`)
-    .orderBy(pingResult.monitorName, sql`DATE(${pingResult.createdAt})`);
+    .groupBy(
+      pingResult.monitorName,
+      sql`date(${pingResult.createdAt}, 'unixepoch')`
+    )
+    .orderBy(
+      pingResult.monitorName,
+      sql`date(${pingResult.createdAt}, 'unixepoch')`
+    );
 
   // Group by monitor
   const statsByMonitor = Object.groupBy(dailyStats, (stat) => stat.monitorName);
@@ -74,9 +95,9 @@ const history = router.history.handler(async () => {
   const dailyDowntime = await db
     .select({
       monitorName: incident.monitorName,
-      day: sql<string>`DATE(${incident.openedAt})`,
+      day: sql<string>`date(${incident.openedAt}, "unixepoch")`,
       totalDowntime:
-        sql<string>`SUM(EXTRACT(EPOCH FROM (COALESCE(${incident.closedAt}, NOW()) - ${incident.openedAt})))`.mapWith(
+        sql<number>`sum(coalesce(${incident.closedAt}, unixepoch('now')) - ${incident.openedAt})`.mapWith(
           (v) => Math.round(v)
         ),
     })
@@ -88,7 +109,10 @@ const history = router.history.handler(async () => {
         gte(incident.openedAt, startOfPeriod)
       )
     )
-    .groupBy(incident.monitorName, sql`DATE(${incident.openedAt})`);
+    .groupBy(
+      incident.monitorName,
+      sql`date(${incident.openedAt}, "unixepoch")`
+    );
 
   const downtimeByMonitor = Object.groupBy(
     dailyDowntime,
@@ -96,7 +120,7 @@ const history = router.history.handler(async () => {
   );
 
   const lastStatuses = await db
-    .selectDistinctOn([pingResult.monitorName], {
+    .selectDistinct({
       monitorName: pingResult.monitorName,
       status: pingResult.status,
       createdAt: pingResult.createdAt,
@@ -220,12 +244,15 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
   const latencies = await db
     .select({
       monitorName: pingResult.monitorName,
-      date: sql`DATE_TRUNC('hour', ${pingResult.createdAt}) AT TIME ZONE 'UTC'`.mapWith(
-        (v) => new Date(v).toISOString()
+      date: sql<string>`strftime('%Y-%m-%dT%H:00:00.000Z', ${pingResult.createdAt}, 'unixepoch')`,
+      responseTimes: sql<
+        number[]
+      >`group_concat(${pingResult.responseTime})`.mapWith((v) =>
+        v.split(",").map(Number)
       ),
-      p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
-        (v) => Math.round(v)
-      ),
+      // p95: sql`percentile_cont(0.95) WITHIN GROUP (ORDER BY ${pingResult.responseTime})`.mapWith(
+      //   (v) => Math.round(v)
+      // ),
     })
     .from(pingResult)
     .where(
@@ -236,11 +263,11 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
     )
     .groupBy(
       pingResult.monitorName,
-      sql`DATE_TRUNC('hour', ${pingResult.createdAt})`
+      sql`strftime('%Y-%m-%d %H:00:00', ${pingResult.createdAt}, 'unixepoch')`
     )
     .orderBy(
       pingResult.monitorName,
-      sql`DATE_TRUNC('hour', ${pingResult.createdAt})`
+      sql`strftime('%Y-%m-%d %H:00:00', ${pingResult.createdAt}, 'unixepoch')`
     );
 
   const latenciesByMonitor = Object.groupBy(latencies, (l) => l.monitorName);
@@ -254,7 +281,7 @@ const lastWeekLatencies = router.lastWeekLatencies.handler(async () => {
     latencies:
       latenciesByMonitor[name]?.map((l) => ({
         date: l.date,
-        p95: l.p95,
+        p95: calculatePercentile(l.responseTimes, 95),
       })) || [],
   }));
 });

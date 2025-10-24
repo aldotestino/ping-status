@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "cd819fc2-1643-4a14-b481-3fe4f5c7c553",
+  "id": "6cd14a8e-02d2-4323-a232-d3f7e6a943c2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "incident": {
@@ -33,7 +33,8 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "(unixepoch())"
         },
         "closedAt": {
           "name": "closedAt",
@@ -107,7 +108,8 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "(unixepoch())"
         },
         "incidentId": {
           "name": "incidentId",
