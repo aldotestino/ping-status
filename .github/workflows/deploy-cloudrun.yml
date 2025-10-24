@@ -72,7 +72,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --file infra/Dockerfile.app \
+            --file infra/Dockerfile.standalone \
             --build-arg GIT_SHA=$GITHUB_SHA \
             --build-arg GIT_VERSION=$TAG \
             --tag $IMAGE_URI:latest \
