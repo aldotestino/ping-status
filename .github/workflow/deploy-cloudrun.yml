@@ -1,0 +1,143 @@
+name: Deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+  push:
+    tags:
+      - v*
+
+env:
+  PROJECT_ID: ping-status
+  GAR_LOCATION: europe-west1
+  SERVICE: ping-status
+  REGION: europe-west1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+            workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+            service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker to use gcloud as a credential helper
+        run: gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev --quiet
+
+      - name: Set environment variables
+        run: |
+          echo "IMAGE_URI=$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE" >> $GITHUB_ENV
+          TAG_RAW="${GITHUB_REF##*/}"
+          echo "TAG=$TAG_RAW" >> $GITHUB_ENV
+          # Sanitize tag for GCP labels (replace dots with dashes, lowercase)
+          TAG_LABEL=$(echo "$TAG_RAW" | tr '[:upper:]' '[:lower:]' | tr '.' '-')
+          echo "TAG_LABEL=$TAG_LABEL" >> $GITHUB_ENV
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "DEPLOY_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+            echo "SERVICE_NAME=$SERVICE-${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_ENV=production" >> $GITHUB_ENV
+            echo "SERVICE_NAME=$SERVICE" >> $GITHUB_ENV
+          fi
+
+      - name: Create Artifact Registry repository (if needed)
+        run: |
+          gcloud artifacts repositories create $SERVICE \
+            --repository-format=docker \
+            --location=$GAR_LOCATION \
+            --description="MacDollar Tournament Docker repository" \
+            --quiet || echo "Repository already exists"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --file infra/Dockerfile.app \
+            --build-arg GIT_SHA=$GITHUB_SHA \
+            --build-arg GIT_VERSION=$TAG \
+            --tag $IMAGE_URI:latest \
+            --tag $IMAGE_URI:$TAG \
+            --tag $IMAGE_URI:$GITHUB_SHA \
+            .
+
+      - name: Push Docker image to Artifact Registry
+        run: docker push --all-tags $IMAGE_URI
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE_URI }}:${{ env.TAG }}
+          flags: |
+            --platform=managed
+            --allow-unauthenticated
+            --port=8080
+            --memory=512Mi
+            --cpu=1
+            --min-instances=0
+            --max-instances=10
+            --concurrency=80
+          env_vars: |
+            NODE_ENV=production
+            SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+          labels: |
+            app=macdollar-tournament
+            env=${{ env.DEPLOY_ENV }}
+            version=${{ env.TAG_LABEL }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 MacDollar Tournament Deployed to Cloud Run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** \`${{ env.DEPLOY_ENV }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** \`${{ env.SERVICE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** \`${{ env.REGION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ env.IMAGE_URI }}:${{ env.TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🌐 Service URL" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📱 Access Points" >> $GITHUB_STEP_SUMMARY
+          echo "- **Landing Page:** ${{ steps.deploy.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Host Display:** ${{ steps.deploy.outputs.url }}/host" >> $GITHUB_STEP_SUMMARY
+          echo "- **Controller:** ${{ steps.deploy.outputs.url }}/controller" >> $GITHUB_STEP_SUMMARY
+          echo "- **Admin Panel:** ${{ steps.deploy.outputs.url }}/admin" >> $GITHUB_STEP_SUMMARY
+          echo "- **Team Interfaces:** ${{ steps.deploy.outputs.url }}/team/1 through /team/6" >> $GITHUB_STEP_SUMMARY
+
+      - name: Show deployment logs (on failure)
+        if: failure()
+        run: |
+          echo "## ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the logs above for deployment errors." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Common Issues:" >> $GITHUB_STEP_SUMMARY
+          echo "- Ensure WIF_PROVIDER and WIF_SERVICE_ACCOUNT secrets are properly set" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify GCP project ID and permissions" >> $GITHUB_STEP_SUMMARY
+          echo "- Check that Cloud Run API is enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- Confirm Artifact Registry API is enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify Workload Identity Federation is configured correctly" >> $GITHUB_STEP_SUMMARY
