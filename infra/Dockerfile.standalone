@@ -14,11 +14,7 @@ RUN bun install
 
 RUN bun run build
 
-# Copy startup script
-COPY infra/start-standalone.sh ./start-standalone.sh
-RUN chmod +x ./start-standalone.sh
+COPY infra/start.sh ./start.sh
+RUN chmod +x start.sh
 
-EXPOSE 3000
-
-CMD ["./start-standalone.sh"]
-
+CMD ["./start.sh"]

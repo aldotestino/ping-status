@@ -20,8 +20,8 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@libsql/client": "^0.15.15",
     "@ping-status/env": "workspace:*",
-    "better-sqlite3": "^12.4.1",
     "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3",
     "zod": "^4.1.11"

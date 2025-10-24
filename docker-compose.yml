@@ -8,5 +8,7 @@ services:
       - 8080:3000
     env_file:
       - .env
+    environment:
+      - DATABASE_PATH=/app/data/ping-status.db
     volumes:
-      - ./data:/app
+      - ./data:/app/data

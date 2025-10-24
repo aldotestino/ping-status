@@ -15,12 +15,12 @@ app.use(
       await sleep(ms);
     }
 
-    next();
+    await next();
   })
 );
 
 app.get("/200", (c) => c.text("200 OK"));
-app.get("/201", (c) => c.text("201 Created", 201));
+app.get("/201", (c) => c.text("201 Created"));
 app.get("/204", (c) => {
   c.status(204);
   return c.body(null);
