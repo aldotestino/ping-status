@@ -16,7 +16,7 @@ const program = Effect.gen(function* () {
   const drizzle = yield* DrizzleWrapper;
   const notifier = yield* Effect.serviceOption(Notifier);
 
-  yield* Console.log("notifier is provided:", Option.isSome(notifier));
+  yield* Console.log("Notifier is provided:", Option.isSome(notifier));
 
   const pings = yield* Effect.all(monitors.map(monitorProcessor.process), {
     concurrency: env.MONITOR_CONCURRENCY,
@@ -59,8 +59,8 @@ const program = Effect.gen(function* () {
     }
   }
 
-  // close incidents
   if (incidentsToClose.length > 0) {
+    // close incidents
     const closed = yield* drizzle.query((client) =>
       client
         .update(incident)
@@ -95,14 +95,20 @@ const program = Effect.gen(function* () {
   yield* drizzle.query((client) =>
     client.insert(pingResult).values(updatedPings)
   );
-}).pipe(
-  Effect.schedule(
-    Schedule.spaced(Duration.minutes(env.MONITOR_INTERVAL_MINUTES))
-  )
-);
+});
+
+// If MONITOR_INTERVAL_MINUTES is set, run on a schedule (dev mode)
+// Otherwise, run once and exit (prod mode with PM2 cron)
+const scheduledProgram = env.MONITOR_INTERVAL_MINUTES
+  ? program.pipe(
+      Effect.schedule(
+        Schedule.spaced(Duration.minutes(env.MONITOR_INTERVAL_MINUTES))
+      )
+    )
+  : program;
 
 // do not catch database errors as they represent defects
-const main = program.pipe(
+const main = scheduledProgram.pipe(
   Effect.provide(env.SLACK_WEBHOOK_URL ? Notifier.Default : Layer.empty),
   Effect.provide(DrizzleWrapper.Default),
   Effect.provide(MonitorProcessor.Default),

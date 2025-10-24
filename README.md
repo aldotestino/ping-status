@@ -31,16 +31,20 @@ This branch (`standalone`) provides a single-container deployment that runs both
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory for **local development**:
 
 ```env
 # Monitor configuration
-MONITOR_INTERVAL_MINUTES=1
-MONITOR_CONCURRENCY=5
+MONITOR_INTERVAL_MINUTES=1  # Used ONLY for local development (runs continuously on interval)
+MONITOR_CONCURRENCY=5       # Number of monitors to ping concurrently
 
 # Optional: Slack notifications
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
+
+**Important**: 
+- **Local Development**: Set `MONITOR_INTERVAL_MINUTES` to run the pinger continuously on the specified interval
+- **Docker/Production**: Do NOT set `MONITOR_INTERVAL_MINUTES`. The `docker-compose.yml` explicitly excludes it because PM2's cron schedule handles timing. If set, the pinger will run in continuous mode and PM2 cron won't work properly.
 
 ### Running with Docker
 
@@ -78,6 +82,21 @@ View specific service logs:
 docker exec -it <container-name> pm2 logs api
 docker exec -it <container-name> pm2 logs pinger
 ```
+
+#### Configuring Pinger Schedule
+
+The pinger runs on a cron schedule in production. To modify the interval, edit `infra/ecosystem.config.cjs`:
+
+```javascript
+cron_restart: "*/1 * * * *"  // Every minute (default)
+// cron_restart: "*/5 * * * *"  // Every 5 minutes
+// cron_restart: "*/15 * * * *"  // Every 15 minutes
+```
+
+Cron format: `minute hour day month weekday`
+- `*/1 * * * *` - Every minute
+- `*/5 * * * *` - Every 5 minutes
+- `0 * * * *` - Every hour at minute 0
 
 ### Local Development
 

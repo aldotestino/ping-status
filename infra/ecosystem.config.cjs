@@ -2,7 +2,7 @@
 module.exports = {
   apps: [
     {
-      name: "api",
+      name: "app",
       script: "bun",
       args: "run start:app",
       cwd: "/app",
@@ -24,9 +24,10 @@ module.exports = {
       args: "run start:pinger",
       cwd: "/app",
       instances: 1,
-      autorestart: true,
+      autorestart: false,
       watch: false,
       max_memory_restart: "1G",
+      cron_restart: "*/1 * * * *", // Run every minute
       env: {
         NODE_ENV: "production",
       },
