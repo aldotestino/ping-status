@@ -1,7 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createSelectSchema } from "drizzle-zod";
-import type { z } from "zod";
+import { z } from "zod";
 
 // SQLite doesn't have enums, so we use text with check constraints
 export const pingStatusValues = ["operational", "degraded", "down"] as const;
@@ -29,7 +29,9 @@ export const pingResult = sqliteTable(
   (table) => [index("pingResult_monitorName_idx").on(table.monitorName)]
 );
 
-export const pingResultSchema = createSelectSchema(pingResult);
+export const pingResultSchema = createSelectSchema(pingResult, {
+  status: z.enum(pingStatusValues),
+});
 export const insertPingResultSchema = pingResultSchema.omit({
   id: true,
   createdAt: true,
@@ -52,7 +54,9 @@ export const incident = sqliteTable(
   (table) => [index("incident_monitorName_idx").on(table.monitorName)]
 );
 
-export const incidentSchema = createSelectSchema(incident);
+export const incidentSchema = createSelectSchema(incident, {
+  type: z.enum(incidentTypeValues),
+});
 export const insertIncidentSchema = incidentSchema.omit({
   id: true,
   openedAt: true,
