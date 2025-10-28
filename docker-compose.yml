@@ -7,7 +7,7 @@ services:
     ports:
       - 8080:3000
     environment:
-      # DO NOT set MONITOR_INTERVAL_MINUTES - PM2 cron handles scheduling
+      - MONITOR_INTERVAL_MINUTES=1
       - DATABASE_PATH=/app/data/ping-status.db
     volumes:
       - ./data:/app/data

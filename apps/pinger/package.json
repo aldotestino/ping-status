@@ -17,7 +17,7 @@
     "@effect/platform": "^0.92.1",
     "@effect/platform-bun": "^0.81.0",
     "@ping-status/db": "workspace:*",
-    "@ping-status/env": "workspace:*",
+    "@ping-status/config": "workspace:*",
     "@ping-status/monitor": "workspace:*",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.5",

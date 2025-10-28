@@ -10,9 +10,6 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: "1G",
-      env: {
-        NODE_ENV: "production",
-      },
       error_file: "/app/logs/api-error.log",
       out_file: "/app/logs/api-out.log",
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
@@ -27,10 +24,8 @@ module.exports = {
       autorestart: false,
       watch: false,
       max_memory_restart: "1G",
-      cron_restart: "*/1 * * * *", // Run every minute
-      env: {
-        NODE_ENV: "production",
-      },
+      // Run every 10 minutes
+      // cron_restart: "*/10 * * * *",
       error_file: "/app/logs/pinger-error.log",
       out_file: "/app/logs/pinger-out.log",
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",

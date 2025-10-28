@@ -1,7 +1,8 @@
 import { implement, ORPCError } from "@orpc/server";
+import { monitors as monitorsArray } from "@ping-status/config/monitors";
 import { db } from "@ping-status/db";
 import { incident, pingResult } from "@ping-status/db/schema";
-import { type Monitor, monitors as monitorsArray } from "@ping-status/monitor";
+import type { Monitor } from "@ping-status/monitor";
 import { makeBadge } from "badge-maker";
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import {

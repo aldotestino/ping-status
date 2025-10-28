@@ -1,6 +1,6 @@
 import { HttpClient, HttpClientRequest } from "@effect/platform";
+import { env } from "@ping-status/config/env";
 import type { Incident, PingResult } from "@ping-status/db/schema";
-import { env } from "@ping-status/env";
 import { formatDistance } from "date-fns";
 import { Console, Duration, Effect, pipe, Schedule } from "effect";
 import { table } from "table";
@@ -79,7 +79,8 @@ export class Notifier extends Effect.Service<Notifier>()("Notifier", {
       pipe(
         client.execute(
           pipe(
-            HttpClientRequest.post(env.SLACK_WEBHOOK_URL),
+            // biome-ignore lint/style/noNonNullAssertion: slack webhook will be defined if the service is active
+            HttpClientRequest.post(env.SLACK_WEBHOOK_URL!),
             HttpClientRequest.bodyUnsafeJson(message)
           )
         ),

@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { env } from "@ping-status/env";
+import { env } from "@ping-status/config/env";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import {
   incident,

@@ -1,8 +1,8 @@
 import { FetchHttpClient } from "@effect/platform";
 import { BunRuntime } from "@effect/platform-bun";
+import { env } from "@ping-status/config/env";
+import { monitors } from "@ping-status/config/monitors";
 import { type Incident, incident, pingResult } from "@ping-status/db/schema";
-import { env } from "@ping-status/env";
-import { monitors } from "@ping-status/monitor";
 import { and, inArray, isNull } from "drizzle-orm";
 import { Console, Duration, Effect, Layer, Option, Schedule } from "effect";
 import { DrizzleWrapper } from "@/services/drizzle-wrapper";
