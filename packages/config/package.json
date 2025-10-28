@@ -1,9 +1,10 @@
 {
-  "name": "@ping-status/env",
+  "name": "@ping-status/config",
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    "./env": "./src/env.ts",
+    "./monitors": "./src/monitors.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -12,6 +13,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "@ping-status/monitor": "workspace:*"
   }
 }

@@ -5,6 +5,7 @@ const envSchema = z.object({
   MONITOR_INTERVAL_MINUTES: z.coerce.number().int().min(1).max(120).default(1),
   MONITOR_CONCURRENCY: z.coerce.number().int().min(1).max(10).default(5),
   SLACK_WEBHOOK_URL: z.url().optional(),
+  PORT: z.coerce.number().int().default(3000),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -14,4 +15,5 @@ export const env = envSchema.parse({
   MONITOR_INTERVAL_MINUTES: process.env.MONITOR_INTERVAL_MINUTES,
   MONITOR_CONCURRENCY: process.env.MONITOR_CONCURRENCY,
   SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
+  PORT: process.env.PORT,
 });

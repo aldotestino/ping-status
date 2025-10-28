@@ -1,4 +1,4 @@
-import { env } from "@ping-status/env";
+import { env } from "@ping-status/config/env";
 import { drizzle } from "drizzle-orm/node-postgres";
 import {
   incident,

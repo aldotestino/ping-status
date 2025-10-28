@@ -1,4 +1,4 @@
-import { env } from "@ping-status/env";
+import { env } from "@ping-status/config/env";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({

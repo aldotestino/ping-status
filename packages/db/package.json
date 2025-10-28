@@ -21,7 +21,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@ping-status/env": "workspace:*",
+    "@ping-status/config": "workspace:*",
     "drizzle-orm": "^0.44.5",
     "drizzle-zod": "^0.8.3",
     "pg": "^8.16.3",
