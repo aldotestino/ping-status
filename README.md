@@ -31,20 +31,22 @@ This branch (`standalone`) provides a single-container deployment that runs both
 
 ### Environment Variables
 
+The pinger service uses Effect's internal cron scheduler, so `MONITOR_INTERVAL_MINUTES` is required in both local development and Docker/production environments.
+
 Create a `.env` file in the root directory for **local development**:
 
 ```env
 # Monitor configuration
-MONITOR_INTERVAL_MINUTES=1  # Used ONLY for local development (runs continuously on interval)
-MONITOR_CONCURRENCY=5       # Number of monitors to ping concurrently
+MONITOR_INTERVAL_MINUTES=1  # Interval in minutes between ping cycles (1-120)
+MONITOR_CONCURRENCY=5       # Number of monitors to ping concurrently (1-10)
+PORT=3000                   # API server port (default: 3000)
+DATABASE_PATH=../../ping-status.db  # Path to SQLite database file
 
 # Optional: Slack notifications
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
 
-**Important**: 
-- **Local Development**: Set `MONITOR_INTERVAL_MINUTES` to run the pinger continuously on the specified interval
-- **Docker/Production**: Do NOT set `MONITOR_INTERVAL_MINUTES`. The `docker-compose.yml` explicitly excludes it because PM2's cron schedule handles timing. If set, the pinger will run in continuous mode and PM2 cron won't work properly.
+**Note**: In Docker, `MONITOR_INTERVAL_MINUTES` defaults to 1 minute (set in `docker-compose.yml`). The pinger runs as a long-running process that schedules itself internally using Effect's cron scheduler.
 
 ### Running with Docker
 
@@ -79,24 +81,18 @@ docker exec -it <container-name> pm2 logs
 View specific service logs:
 
 ```bash
-docker exec -it <container-name> pm2 logs api
+docker exec -it <container-name> pm2 logs app
 docker exec -it <container-name> pm2 logs pinger
 ```
 
 #### Configuring Pinger Schedule
 
-The pinger runs on a cron schedule in production. To modify the interval, edit `infra/ecosystem.config.cjs`:
+The pinger uses Effect's internal cron scheduler. To modify the ping interval, set the `MONITOR_INTERVAL_MINUTES` environment variable:
 
-```javascript
-cron_restart: "*/1 * * * *"  // Every minute (default)
-// cron_restart: "*/5 * * * *"  // Every 5 minutes
-// cron_restart: "*/15 * * * *"  // Every 15 minutes
-```
+- In `docker-compose.yml` for Docker deployments
+- In your `.env` file for local development
 
-Cron format: `minute hour day month weekday`
-- `*/1 * * * *` - Every minute
-- `*/5 * * * *` - Every 5 minutes
-- `0 * * * *` - Every hour at minute 0
+The pinger runs as a long-running process that schedules itself internally. Supported values: 1-120 minutes.
 
 ### Local Development
 
@@ -140,7 +136,10 @@ bun run web
 
 ### Database
 
-The application uses SQLite for data persistence. The database file (`ping-status.db`) is stored in the application's working directory.
+The application uses SQLite for data persistence. The database file location depends on the environment:
+
+- **Local Development**: `ping-status.db` in the project root (or path specified by `DATABASE_PATH`)
+- **Docker**: `/app/data/ping-status.db` (mounted from `./data` directory)
 
 To view/edit the database directly:
 
@@ -154,6 +153,6 @@ bun run db:studio
 - `apps/web` - Web frontend (React)
 - `apps/pinger` - Monitoring service
 - `packages/db` - Database schema and client
-- `packages/env` - Environment variable validation
-- `packages/monitor` - Monitor configuration
+- `packages/config` - Environment variable validation and monitor configuration
+- `packages/monitor` - Monitor configuration types
 - `infra/` - Docker configuration
