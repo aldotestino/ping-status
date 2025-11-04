@@ -24,8 +24,6 @@ module.exports = {
       autorestart: false,
       watch: false,
       max_memory_restart: "1G",
-      // Run every 10 minutes
-      // cron_restart: "*/10 * * * *",
       error_file: "/app/logs/pinger-error.log",
       out_file: "/app/logs/pinger-out.log",
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",

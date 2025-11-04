@@ -95,20 +95,12 @@ const program = Effect.gen(function* () {
   yield* drizzle.query((client) =>
     client.insert(pingResult).values(updatedPings)
   );
-});
-
-// If MONITOR_INTERVAL_MINUTES is set, run on a schedule (dev mode)
-// Otherwise, run once and exit (prod mode with PM2 cron)
-const scheduledProgram = env.MONITOR_INTERVAL_MINUTES
-  ? program.pipe(
-      Effect.schedule(
-        Schedule.cron(`*/${env.MONITOR_INTERVAL_MINUTES} * * * *`)
-      )
-    )
-  : program;
+}).pipe(
+  Effect.schedule(Schedule.cron(`*/${env.MONITOR_INTERVAL_MINUTES} * * * *`))
+);
 
 // do not catch database errors as they represent defects
-const main = scheduledProgram.pipe(
+const main = program.pipe(
   Effect.provide(env.SLACK_WEBHOOK_URL ? Notifier.Default : Layer.empty),
   Effect.provide(DrizzleWrapper.Default),
   Effect.provide(MonitorProcessor.Default),
