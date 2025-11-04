@@ -4,7 +4,7 @@ import { env } from "@ping-status/config/env";
 import { monitors } from "@ping-status/config/monitors";
 import { type Incident, incident, pingResult } from "@ping-status/db/schema";
 import { and, inArray, isNull } from "drizzle-orm";
-import { Console, Duration, Effect, Layer, Option, Schedule } from "effect";
+import { Console, Effect, Layer, Option, Schedule } from "effect";
 import { DrizzleWrapper } from "@/services/drizzle-wrapper";
 import { MonitorPinger } from "@/services/monitor-pinger";
 import { MonitorProcessor } from "@/services/monitor-processor";
@@ -102,7 +102,7 @@ const program = Effect.gen(function* () {
 const scheduledProgram = env.MONITOR_INTERVAL_MINUTES
   ? program.pipe(
       Effect.schedule(
-        Schedule.spaced(Duration.minutes(env.MONITOR_INTERVAL_MINUTES))
+        Schedule.cron(`*/${env.MONITOR_INTERVAL_MINUTES} * * * *`)
       )
     )
   : program;

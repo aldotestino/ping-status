@@ -1,75 +1,12 @@
 import { HttpClient, HttpClientRequest } from "@effect/platform";
 import { env } from "@ping-status/config/env";
-import type { Incident, PingResult } from "@ping-status/db/schema";
-import { formatDistance } from "date-fns";
+import type { Incident } from "@ping-status/db/schema";
 import { Console, Duration, Effect, pipe, Schedule } from "effect";
-import { table } from "table";
-
-type OpenIncident = Incident &
-  Pick<PingResult, "statusCode" | "responseTime" | "message">;
-
-function formatOpenIncidentsMessage(incidents: OpenIncident[]) {
-  const tableData = [
-    ["Service Name", "#ID", "Status", "Status Code", "Message"],
-    ...incidents.map((i) => [
-      i.monitorName,
-      i.id,
-      i.type === "down" ? "🔴 Down" : "🟡 Degraded",
-      i.statusCode,
-      i.message,
-    ]),
-  ];
-
-  return {
-    blocks: [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*🔴 Service Health Alert - ${incidents.length} incidents opened*`,
-        },
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `\`\`\`${table(tableData)}\`\`\``,
-        },
-      },
-    ],
-  };
-}
-
-function formatClosedIncidentsMessage(incidents: Incident[]) {
-  const tableData = [
-    ["Service Name", "#ID", "Status", "Duration"],
-    ...incidents.map((i) => [
-      i.monitorName,
-      i.id,
-      "🟢 Operational",
-      formatDistance(i.closedAt || new Date(), i.openedAt),
-    ]),
-  ];
-
-  return {
-    blocks: [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*🟢 Service Health Alert - ${incidents.length} incidents closed*`,
-        },
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `\`\`\`${table(tableData)}\`\`\``,
-        },
-      },
-    ],
-  };
-}
+import {
+  formatClosedIncidentsMessage,
+  formatOpenIncidentsMessage,
+  type OpenIncident,
+} from "@/utils/slack";
 
 export class Notifier extends Effect.Service<Notifier>()("Notifier", {
   effect: Effect.gen(function* () {
@@ -79,8 +16,7 @@ export class Notifier extends Effect.Service<Notifier>()("Notifier", {
       pipe(
         client.execute(
           pipe(
-            // biome-ignore lint/style/noNonNullAssertion: slack webhook will be defined if the service is active
-            HttpClientRequest.post(env.SLACK_WEBHOOK_URL!),
+            HttpClientRequest.post(env.SLACK_WEBHOOK_URL ?? ""), // if we reach this the SLACK_WEBHOOK_URL is defined
             HttpClientRequest.bodyUnsafeJson(message)
           )
         ),

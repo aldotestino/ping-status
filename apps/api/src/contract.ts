@@ -90,7 +90,11 @@ const monitorDetails = oc
   )
   .output(
     z.object({
-      monitor: monitorSchema.omit({ validator: true }),
+      monitor: monitorSchema.omit({
+        validator: true,
+        headers: true,
+        body: true,
+      }),
       pingResults: z.array(
         z.object({
           date: z.iso.datetime(),
